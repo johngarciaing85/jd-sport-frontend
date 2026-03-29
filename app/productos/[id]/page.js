@@ -230,9 +230,9 @@ export default function ProductoDetalle() {
               <div className="flex flex-col gap-6">
                 {/* Category + gender badges */}
                 <div className="flex items-center gap-2">
-                  {producto.categoria && (
+                  {(producto.categoria?.nombre ?? producto.categoria) && (
                     <span className="text-white/40 text-[10px] tracking-[0.3em] uppercase border border-white/15 px-2.5 py-1">
-                      {producto.categoria}
+                      {producto.categoria?.nombre ?? producto.categoria}
                     </span>
                   )}
                   {producto.genero && (

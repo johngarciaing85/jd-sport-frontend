@@ -52,7 +52,7 @@ function Hero() {
       <div className="relative z-10 text-center px-6 max-w-4xl mx-auto">
         {/* Label */}
         <p className="text-white/40 text-xs tracking-[0.4em] uppercase mb-8">
-          Colección 2025
+          Colección 2026
         </p>
 
         {/* Headline */}
@@ -72,7 +72,7 @@ function Hero() {
 
         {/* Subline */}
         <p className="text-white/50 text-base md:text-lg tracking-wide mb-12 max-w-md mx-auto">
-          Moda urbana de alta calidad para dama y caballero. Cada prenda, una declaración.
+          Moda urbana de alta calidad para dama y caballero. Cada prenda, una declaración. Los mejores precios para mayoristas
         </p>
 
         {/* CTAs */}

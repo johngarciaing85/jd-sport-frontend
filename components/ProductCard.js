@@ -2,6 +2,7 @@ import Link from 'next/link';
 
 export default function ProductCard({ producto }) {
   const { id, nombre, precio, categoria, genero, imagen } = producto;
+  const categoriaNombre = categoria?.nombre ?? categoria ?? null;
 
   return (
     <div className="group flex flex-col bg-[#111] border border-white/10 hover:border-white/25 transition-all duration-300">
@@ -26,9 +27,9 @@ export default function ProductCard({ producto }) {
 
         {/* Badges */}
         <div className="absolute top-3 left-3 flex flex-col gap-1.5">
-          {categoria && (
+          {categoriaNombre && (
             <span className="bg-black/80 backdrop-blur-sm text-white/80 text-[10px] tracking-[0.2em] uppercase px-2.5 py-1">
-              {categoria}
+              {categoriaNombre}
             </span>
           )}
           {genero && (

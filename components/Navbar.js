@@ -45,6 +45,10 @@ function DiamondMini() {
   );
 }
 
+function isAdmin(u) {
+  return u?.is_admin || u?.is_staff || u?.es_admin || u?.rol === 'admin' || u?.role === 'admin';
+}
+
 const navLinks = [
   { href: '/', label: 'Inicio' },
   { href: '/productos', label: 'Productos' },
@@ -85,6 +89,19 @@ export default function Navbar() {
               {label}
             </Link>
           ))}
+          {mounted && isAdmin(usuario) && (
+            <Link
+              href="/admin/dashboard"
+              className={`text-xs tracking-[0.2em] uppercase transition-colors flex items-center gap-1.5 ${
+                pathname.startsWith('/admin') ? 'text-blue-400' : 'text-blue-400/50 hover:text-blue-400'
+              }`}
+            >
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
+                <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+              </svg>
+              Dashboard
+            </Link>
+          )}
         </nav>
 
         {/* Cart + auth + mobile toggle */}
@@ -150,6 +167,11 @@ export default function Navbar() {
           ))}
           {mounted && usuario && (
             <>
+              {isAdmin(usuario) && (
+                <Link href="/admin/dashboard" onClick={() => setMenuOpen(false)} className="text-blue-400/70 hover:text-blue-400 text-sm tracking-[0.2em] uppercase transition-colors">
+                  Dashboard
+                </Link>
+              )}
               <Link href="/mis-pedidos" onClick={() => setMenuOpen(false)} className="text-white/50 hover:text-white text-sm tracking-[0.2em] uppercase transition-colors">
                 Mis pedidos
               </Link>

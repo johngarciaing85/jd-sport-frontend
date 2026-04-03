@@ -270,6 +270,46 @@ export default function AdminDashboard() {
       <main className="flex-1 pt-16">
         <div className="max-w-7xl mx-auto px-6 py-10">
 
+          {/* ── Admin nav ── */}
+          <div className="flex items-center gap-1 mb-8 -mx-1 flex-wrap">
+            <Link
+              href="/admin/dashboard"
+              className="text-white text-[10px] tracking-[0.25em] uppercase border border-white/25 bg-white/5 px-4 py-2 transition-colors"
+            >
+              Dashboard
+            </Link>
+            <Link
+              href="/admin/productos"
+              className="text-white/40 hover:text-white text-[10px] tracking-[0.25em] uppercase border border-white/10 hover:border-white/30 px-4 py-2 transition-colors"
+            >
+              Productos
+            </Link>
+            <Link
+              href="/admin/categorias"
+              className="text-white/40 hover:text-white text-[10px] tracking-[0.25em] uppercase border border-white/10 hover:border-white/30 px-4 py-2 transition-colors"
+            >
+              Categorías
+            </Link>
+            <Link
+              href="/admin/pedidos"
+              className="text-white/40 hover:text-white text-[10px] tracking-[0.25em] uppercase border border-white/10 hover:border-white/30 px-4 py-2 transition-colors"
+            >
+              Pedidos
+            </Link>
+            <Link
+              href="/admin/clientes"
+              className="text-white/40 hover:text-white text-[10px] tracking-[0.25em] uppercase border border-white/10 hover:border-white/30 px-4 py-2 transition-colors"
+            >
+              Clientes
+            </Link>
+            <Link
+              href="/admin/solicitudes"
+              className="text-white/40 hover:text-white text-[10px] tracking-[0.25em] uppercase border border-white/10 hover:border-white/30 px-4 py-2 transition-colors"
+            >
+              Solicitudes
+            </Link>
+          </div>
+
           {/* ── Page header ── */}
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10 pb-8 border-b border-white/10">
             <div>

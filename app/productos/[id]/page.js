@@ -184,6 +184,9 @@ export default function ProductoDetalle() {
     router.push('/carrito');
   };
 
+  const imgSrc   = producto?.imagen_url ?? producto?.imagen ?? null;
+  const imagenes = producto?.imagenes   ?? (imgSrc ? [imgSrc] : []);
+
   return (
     <div className="flex flex-col min-h-screen bg-black">
       <Navbar />
@@ -191,6 +194,17 @@ export default function ProductoDetalle() {
 
       <main className="flex-1 pt-16">
         <div className="max-w-7xl mx-auto px-6 py-12">
+          {/* Back button */}
+          <button
+            onClick={() => router.back()}
+            className="inline-flex items-center gap-1.5 text-white/40 hover:text-white text-xs tracking-[0.2em] uppercase transition-colors mb-6"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" />
+            </svg>
+            Volver a productos
+          </button>
+
           {/* Breadcrumb */}
           <nav className="flex items-center gap-2 text-white/30 text-xs tracking-wide mb-10">
             <Link href="/" className="hover:text-white transition-colors">Inicio</Link>
@@ -222,7 +236,7 @@ export default function ProductoDetalle() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 xl:gap-20">
               {/* Gallery */}
               <Gallery
-                imagenes={producto.imagenes ?? (producto.imagen ? [producto.imagen] : [])}
+                imagenes={imagenes}
                 nombre={producto.nombre}
               />
 

@@ -1,5 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
+
+let splashHasPlayed = false;
 import axios from 'axios';
 import Link from 'next/link';
 import LogoAnimado from '@/components/LogoAnimado';
@@ -92,11 +94,7 @@ function Hero() {
         </div>
       </div>
 
-      {/* Scroll hint */}
-      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-30">
-        <p className="text-white text-[10px] tracking-[0.4em] uppercase">Scroll</p>
-        <div className="w-px h-10 bg-white animate-pulse" />
-      </div>
+
     </section>
   );
 }
@@ -179,7 +177,7 @@ function FeaturedProducts() {
 
 /* ─── Banner strip ───────────────────────────────────────────────────────── */
 function BannerStrip() {
-  const items = ['Envío gratis en compras +$50', 'Devoluciones sin costo', 'Pago seguro', 'Colecciones exclusivas'];
+  const items = ['Precios exclusivos para mayoristas', 'Devoluciones sin costo', 'Pago seguro', 'Colecciones exclusivas'];
   return (
     <div className="bg-white py-3 overflow-hidden">
       <div className="flex gap-16 whitespace-nowrap animate-[marquee_20s_linear_infinite]">
@@ -234,7 +232,14 @@ export default function Home() {
   const [splashDone, setSplashDone] = useState(false);
 
   useEffect(() => {
-    const t = setTimeout(() => setSplashDone(true), 2500);
+    if (splashHasPlayed) {
+      setSplashDone(true);
+      return;
+    }
+    const t = setTimeout(() => {
+      splashHasPlayed = true;
+      setSplashDone(true);
+    }, 2500);
     return () => clearTimeout(t);
   }, []);
 

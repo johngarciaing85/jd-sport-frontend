@@ -1,16 +1,17 @@
 import Link from 'next/link';
 
 export default function ProductCard({ producto }) {
-  const { id, nombre, precio, categoria, genero, imagen } = producto;
+  const { id, nombre, precio, categoria, genero } = producto;
+  const imgSrc = producto.imagen_url ?? producto.imagen ?? null;
   const categoriaNombre = categoria?.nombre ?? categoria ?? null;
 
   return (
     <div className="group flex flex-col bg-[#111] border border-white/10 hover:border-white/25 transition-all duration-300">
       {/* Image */}
       <div className="aspect-[3/4] bg-[#1a1a1a] overflow-hidden relative">
-        {imagen ? (
+        {imgSrc ? (
           <img
-            src={imagen}
+            src={imgSrc}
             alt={nombre}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           />

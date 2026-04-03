@@ -64,6 +64,10 @@ export default function Navbar() {
 
   useEffect(() => setMounted(true), []);
 
+  const visibleLinks = mounted && usuario
+    ? navLinks.filter(({ href }) => href !== '/login')
+    : navLinks;
+
   return (
     <header className="fixed top-0 left-0 right-0 z-40 bg-black/95 backdrop-blur-md border-b border-white/10">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
@@ -78,7 +82,7 @@ export default function Navbar() {
 
         {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-8">
-          {navLinks.map(({ href, label }) => (
+          {visibleLinks.map(({ href, label }) => (
             <Link
               key={href}
               href={href}
@@ -153,7 +157,7 @@ export default function Navbar() {
       {/* Mobile menu */}
       {menuOpen && (
         <nav className="md:hidden bg-black border-t border-white/10 px-6 py-5 flex flex-col gap-5">
-          {navLinks.map(({ href, label }) => (
+          {visibleLinks.map(({ href, label }) => (
             <Link
               key={href}
               href={href}

@@ -5,8 +5,11 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import ProductCard from '@/components/ProductCard';
 
-const GENEROS = ['Todos', 'Dama', 'Caballero'];
-const CATEGORIAS = ['Todas', 'Camisas', 'Pantalones', 'Vestidos', 'Zapatos', 'Accesorios', 'Deportivo'];
+const GENEROS = [
+  { label: 'Todos',     value: ''       },
+  { label: 'Caballero', value: 'hombre' },
+  { label: 'Dama',      value: 'mujer'  },
+];
 
 function FilterChip({ label, active, onClick }) {
   return (
@@ -37,28 +40,42 @@ function ProductSkeleton() {
 }
 
 export default function ProductosPage() {
-  const [productos, setProductos] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [genero, setGenero] = useState('Todos');
-  const [categoria, setCategoria] = useState('Todas');
-  const [busqueda, setBusqueda] = useState('');
+  const [productos,  setProductos]  = useState([]);
+  const [loading,    setLoading]    = useState(true);
+  const [error,      setError]      = useState(null);
+  const [genero,     setGenero]     = useState('');        // API value: ''|'hombre'|'mujer'
+  const [categoriaId,setCategoriaId]= useState('');        // category id or ''
+  const [busqueda,   setBusqueda]   = useState('');
+  const [categorias, setCategorias] = useState([]);
+
+  // Fetch categories once on mount
+  useEffect(() => {
+    axios.get('http://localhost:8000/api/categorias/')
+      .then((res) => {
+        const list = res.data?.items ?? res.data?.results ?? (Array.isArray(res.data) ? res.data : []);
+        setCategorias(list);
+      })
+      .catch(() => {});
+  }, []);
 
   const fetchProductos = useCallback(() => {
     setLoading(true);
     setError(null);
 
     const params = {};
-    if (genero !== 'Todos') params.genero = genero.toLowerCase();
-    if (categoria !== 'Todas') params.categoria = categoria.toLowerCase();
-    if (busqueda.trim()) params.q = busqueda.trim();
+    if (genero)       params.genero      = genero;
+    if (categoriaId)  params.categoria_id = categoriaId;
+    if (busqueda.trim()) params.q         = busqueda.trim();
 
     axios
       .get('http://localhost:8000/api/productos/', { params })
-      .then((res) => setProductos(res.data))
+      .then((res) => {
+        const list = res.data?.items ?? res.data?.results ?? (Array.isArray(res.data) ? res.data : []);
+        setProductos(list);
+      })
       .catch(() => setError('No se pudieron cargar los productos.'))
       .finally(() => setLoading(false));
-  }, [genero, categoria, busqueda]);
+  }, [genero, categoriaId, busqueda]);
 
   useEffect(() => {
     const t = setTimeout(fetchProductos, 300);
@@ -110,21 +127,29 @@ export default function ProductosPage() {
             <div>
               <p className="text-white/30 text-[10px] tracking-[0.3em] uppercase mb-3">Género</p>
               <div className="flex flex-wrap gap-2">
-                {GENEROS.map((g) => (
-                  <FilterChip key={g} label={g} active={genero === g} onClick={() => setGenero(g)} />
+                {GENEROS.map(({ label, value }) => (
+                  <FilterChip key={value} label={label} active={genero === value} onClick={() => setGenero(value)} />
                 ))}
               </div>
             </div>
 
             {/* Category filter */}
-            <div>
-              <p className="text-white/30 text-[10px] tracking-[0.3em] uppercase mb-3">Categoría</p>
-              <div className="flex flex-wrap gap-2">
-                {CATEGORIAS.map((c) => (
-                  <FilterChip key={c} label={c} active={categoria === c} onClick={() => setCategoria(c)} />
-                ))}
+            {categorias.length > 0 && (
+              <div>
+                <p className="text-white/30 text-[10px] tracking-[0.3em] uppercase mb-3">Categoría</p>
+                <div className="flex flex-wrap gap-2">
+                  <FilterChip label="Todas" active={categoriaId === ''} onClick={() => setCategoriaId('')} />
+                  {categorias.map((c) => (
+                    <FilterChip
+                      key={c.id}
+                      label={c.nombre}
+                      active={categoriaId === String(c.id)}
+                      onClick={() => setCategoriaId(String(c.id))}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Results count */}
@@ -157,7 +182,7 @@ export default function ProductosPage() {
             <div className="border border-white/10 p-12 text-center">
               <p className="text-white/40 text-sm">No se encontraron productos con los filtros seleccionados.</p>
               <button
-                onClick={() => { setGenero('Todos'); setCategoria('Todas'); setBusqueda(''); }}
+                onClick={() => { setGenero(''); setCategoriaId(''); setBusqueda(''); }}
                 className="mt-4 text-xs tracking-[0.2em] uppercase border border-white/20 px-6 py-2 text-white/60 hover:text-white hover:border-white/50 transition-colors"
               >
                 Limpiar filtros

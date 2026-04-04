@@ -113,9 +113,14 @@ export default function Navbar() {
           {/* Auth quick link */}
           {mounted && usuario ? (
             <div className="hidden md:flex items-center gap-3">
-              <Link href="/mis-pedidos" className="text-white/50 hover:text-white text-xs tracking-[0.2em] uppercase transition-colors">
-                {usuario.nombre ?? 'Mi cuenta'}
-              </Link>
+              {!isAdmin(usuario) && (
+                <Link href="/mis-pedidos" className="text-white/50 hover:text-white text-xs tracking-[0.2em] uppercase transition-colors">
+                  Mis pedidos
+                </Link>
+              )}
+              <span className="text-white/25 text-xs tracking-wide hidden lg:inline">
+                {usuario.nombre ?? usuario.email ?? ''}
+              </span>
               <button onClick={logout} className="text-white/30 hover:text-white/60 text-xs tracking-[0.2em] uppercase transition-colors">
                 Salir
               </button>

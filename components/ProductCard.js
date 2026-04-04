@@ -4,6 +4,7 @@ export default function ProductCard({ producto }) {
   const { id, nombre, precio, categoria, genero } = producto;
   const imgSrc = producto.imagen_url ?? producto.imagen ?? null;
   const categoriaNombre = categoria?.nombre ?? categoria ?? null;
+  const tallas = producto.tallas ?? (producto.talla ? producto.talla.split(',').map((s) => s.trim()).filter(Boolean) : []);
 
   return (
     <div className="group flex flex-col bg-[#111] border border-white/10 hover:border-white/25 transition-all duration-300">
@@ -48,6 +49,19 @@ export default function ProductCard({ producto }) {
             {nombre}
           </h3>
         </div>
+
+        {tallas.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {tallas.slice(0, 6).map((t) => (
+              <span key={t} className="text-[9px] tracking-wide text-white/40 border border-white/10 px-1.5 py-0.5">
+                {t}
+              </span>
+            ))}
+            {tallas.length > 6 && (
+              <span className="text-[9px] tracking-wide text-white/25 px-1 py-0.5">+{tallas.length - 6}</span>
+            )}
+          </div>
+        )}
 
         <div className="flex items-center justify-between mt-auto pt-1">
           <span className="text-white font-bold text-base">

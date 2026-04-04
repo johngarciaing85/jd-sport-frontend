@@ -2,6 +2,8 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 
+const TALLAS_OPCIONES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', '6', '7', '8', '9', '10', '11', '12', 'UNICA'];
+
 const INPUT =
   'w-full bg-[#111] border border-white/15 text-white text-sm px-4 py-2.5 ' +
   'placeholder:text-white/20 focus:outline-none focus:border-white/40 transition-colors tracking-wide';
@@ -42,6 +44,7 @@ export default function ProductoForm({
     ...initialData,
   });
 
+  const [customTalla,  setCustomTalla]  = useState('');
   const [imageFile,    setImageFile]    = useState(null);
   const [imagePreview, setImagePreview] = useState(
     initialData.imagen || initialData.imagen_url || null
@@ -196,17 +199,90 @@ export default function ProductoForm({
         </Field>
       </div>
 
+      {/* ── Talla chips ── */}
+      <div>
+        <label className="block text-white/30 text-[10px] tracking-[0.25em] uppercase mb-3">Tallas disponibles</label>
+        <div className="flex flex-wrap gap-2">
+          {TALLAS_OPCIONES.map((t) => {
+            const selected = fields.talla.split(',').map((s) => s.trim()).filter(Boolean).includes(t);
+            return (
+              <button
+                key={t}
+                type="button"
+                onClick={() => {
+                  const current = fields.talla.split(',').map((s) => s.trim()).filter(Boolean);
+                  const next = selected ? current.filter((s) => s !== t) : [...current, t];
+                  set('talla', next.join(','));
+                }}
+                className={`min-w-[44px] h-9 px-3 border text-xs font-medium tracking-wide transition-all ${
+                  selected
+                    ? 'bg-white text-black border-white'
+                    : 'border-white/20 text-white/50 hover:border-white/50 hover:text-white'
+                }`}
+              >
+                {t}
+              </button>
+            );
+          })}
+        </div>
+        {/* Custom tallas (not in predefined list) shown as removable chips */}
+        {fields.talla.split(',').map((s) => s.trim()).filter((s) => s && !TALLAS_OPCIONES.includes(s)).map((t) => (
+          <button
+            key={t}
+            type="button"
+            onClick={() => {
+              const next = fields.talla.split(',').map((s) => s.trim()).filter((s) => s && s !== t);
+              set('talla', next.join(','));
+            }}
+            className="flex items-center gap-1.5 min-w-[44px] h-9 px-3 border text-xs font-medium tracking-wide transition-all bg-white text-black border-white"
+          >
+            {t}
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        ))}
+      </div>
+
+      {/* Custom talla input */}
+      <div className="flex gap-2 mt-3">
+        <input
+          type="text"
+          value={customTalla}
+          onChange={(e) => setCustomTalla(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key !== 'Enter') return;
+            e.preventDefault();
+            const val = customTalla.trim();
+            if (!val) return;
+            const current = fields.talla.split(',').map((s) => s.trim()).filter(Boolean);
+            if (!current.includes(val)) set('talla', [...current, val].join(','));
+            setCustomTalla('');
+          }}
+          placeholder="Ej. 28, 30, 32..."
+          className="flex-1 bg-[#111] border border-white/15 text-white text-sm px-4 py-2 placeholder:text-white/20 focus:outline-none focus:border-white/40 transition-colors tracking-wide"
+        />
+        <button
+          type="button"
+          onClick={() => {
+            const val = customTalla.trim();
+            if (!val) return;
+            const current = fields.talla.split(',').map((s) => s.trim()).filter(Boolean);
+            if (!current.includes(val)) set('talla', [...current, val].join(','));
+            setCustomTalla('');
+          }}
+          className="px-4 py-2 border border-white/20 text-white/60 hover:text-white hover:border-white/50 text-xs tracking-[0.2em] uppercase transition-colors shrink-0"
+        >
+          Agregar
+        </button>
+      </div>
+
+      {fields.talla && (
+        <p className="text-white/25 text-[10px] tracking-wide mt-2">Seleccionadas: {fields.talla}</p>
+      )}
+
       {/* ── Details ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <Field label="Talla">
-          <input
-            type="text"
-            value={fields.talla}
-            onChange={(e) => set('talla', e.target.value)}
-            placeholder="M, L, XL"
-            className={INPUT}
-          />
-        </Field>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         <Field label="Color">
           <input
             type="text"

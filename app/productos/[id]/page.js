@@ -168,8 +168,9 @@ export default function ProductoDetalle() {
       .finally(() => setLoading(false));
   }, [id]);
 
+  const tallas = producto?.tallas ?? (producto?.talla ? producto.talla.split(',').map((s) => s.trim()).filter(Boolean) : []);
+
   const handleAgregar = () => {
-    const tallas = producto?.tallas ?? [];
     if (tallas.length > 0 && !talla) {
       setTallaError(true);
       return;
@@ -284,16 +285,16 @@ export default function ProductoDetalle() {
                 )}
 
                 {/* Size selector */}
-                {(producto.tallas?.length > 0) && (
+                {tallas.length > 0 && (
                   <div>
                     <SizeSelector
-                      tallas={producto.tallas}
+                      tallas={tallas}
                       selected={talla}
                       onSelect={(t) => { setTalla(t); setTallaError(false); }}
                     />
                     {tallaError && (
                       <p className="text-red-400 text-xs mt-2 tracking-wide">
-                        Por favor selecciona una talla.
+                        Selecciona una talla
                       </p>
                     )}
                   </div>
@@ -324,9 +325,10 @@ export default function ProductoDetalle() {
                 {/* Trust signals */}
                 <div className="flex flex-col gap-2 pt-4 border-t border-white/10">
                   {[
-                    'Envío gratis en compras mayores a $50',
+                    'Envíos a todo el Colombia',
                     'Devoluciones sin costo dentro de 30 días',
                     'Pago 100% seguro con Wompi',
+                    'Los mejores precios para mayoristas',
                   ].map((text) => (
                     <p key={text} className="text-white/30 text-xs tracking-wide flex items-center gap-2">
                       <span className="text-white/20">✓</span> {text}

@@ -13,8 +13,6 @@ const SHIPPING = 0;
 /* ─── Helpers ────────────────────────────────────────────────────────────── */
 function fmtCOP(n) { return `$${Number(n).toLocaleString('es-CO')}`; }
 
-function buildWompiUrl(wompiLink) { return wompiLink; }
-
 /* ─── Cart item ──────────────────────────────────────────────────────────── */
 function CartItem({ item }) {
   const { quitar, actualizarCantidad } = useCarrito();
@@ -127,38 +125,119 @@ function Spinner() {
   );
 }
 
+/* ─── Guest/Auth choice modal ─────────────────────────────────────────────── */
+function AuthChoiceModal({ onGuest, onLogin, onClose }) {
+  useEffect(() => {
+    const h = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.92)' }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="bg-[#0d0d0d] border border-white/15 w-full max-w-sm">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+          <div>
+            <p className="text-white/30 text-[10px] tracking-[0.35em] uppercase">Checkout</p>
+            <p className="text-white text-sm font-bold tracking-wide mt-0.5">¿Cómo quieres continuar?</p>
+          </div>
+          <button onClick={onClose} className="text-white/30 hover:text-white transition-colors p-1">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="px-6 py-5 flex flex-col gap-3">
+          <button
+            onClick={onGuest}
+            className="flex items-start gap-4 p-4 border border-white/10 hover:border-white/30 hover:bg-white/[0.02] text-left transition-colors group"
+          >
+            <span className="text-white/40 group-hover:text-white/70 transition-colors mt-0.5 shrink-0">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+            </span>
+            <div>
+              <p className="text-white text-sm font-bold tracking-wide mb-1">Continuar como invitado</p>
+              <p className="text-white/40 text-xs tracking-wide leading-relaxed">Sin necesidad de crear una cuenta.</p>
+            </div>
+          </button>
+
+          <button
+            onClick={onLogin}
+            className="flex items-start gap-4 p-4 border border-white/10 hover:border-white/30 hover:bg-white/[0.02] text-left transition-colors group"
+          >
+            <span className="text-white/40 group-hover:text-white/70 transition-colors mt-0.5 shrink-0">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                <polyline points="10 17 15 12 10 7" />
+                <line x1="15" y1="12" x2="3" y2="12" />
+              </svg>
+            </span>
+            <div>
+              <p className="text-white text-sm font-bold tracking-wide mb-1">Tengo cuenta / Registrarme</p>
+              <p className="text-white/40 text-xs tracking-wide leading-relaxed">Inicia sesión para un checkout más rápido.</p>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Address form ───────────────────────────────────────────────────────── */
-function AddressForm({ fields, onChange }) {
+function AddressForm({ fields, onChange, isGuest }) {
   const INPUT = 'w-full bg-[#111] border border-white/15 text-white text-sm px-4 py-2.5 placeholder:text-white/20 focus:outline-none focus:border-white/40 transition-colors tracking-wide';
   return (
     <div className="flex flex-col gap-3">
-      <div>
-        <label className="block text-white/30 text-[10px] tracking-[0.25em] uppercase mb-1.5">Dirección *</label>
-        <input type="text" value={fields.direccion} onChange={(e) => onChange('direccion', e.target.value)}
-          placeholder="Calle 10 # 5-20" className={INPUT} />
-      </div>
-      <div>
-        <label className="block text-white/30 text-[10px] tracking-[0.25em] uppercase mb-1.5">Barrio *</label>
-        <input type="text" value={fields.barrio} onChange={(e) => onChange('barrio', e.target.value)}
-          placeholder="El Poblado" className={INPUT} />
-      </div>
+      {isGuest && (
+        <>
+          <div>
+            <label className="block text-white/30 text-[10px] tracking-[0.25em] uppercase mb-1.5">Nombre completo *</label>
+            <input type="text" value={fields.nombre} onChange={(e) => onChange('nombre', e.target.value)}
+              placeholder="Juan Pérez" className={INPUT} />
+          </div>
+          <div>
+            <label className="block text-white/30 text-[10px] tracking-[0.25em] uppercase mb-1.5">Email *</label>
+            <input type="email" value={fields.email} onChange={(e) => onChange('email', e.target.value)}
+              placeholder="juan@ejemplo.com" className={INPUT} />
+            <p className="text-white/25 text-[9px] mt-1">Te enviaremos la confirmación de tu pedido</p>
+          </div>
+        </>
+      )}
       <div>
         <label className="block text-white/30 text-[10px] tracking-[0.25em] uppercase mb-1.5">Celular *</label>
         <input type="tel" value={fields.celular} onChange={(e) => onChange('celular', e.target.value)}
           placeholder="300 123 4567" className={INPUT} />
+      </div>
+      <div>
+        <label className="block text-white/30 text-[10px] tracking-[0.25em] uppercase mb-1.5">Dirección</label>
+        <input type="text" value={fields.direccion} onChange={(e) => onChange('direccion', e.target.value)}
+          placeholder="Calle 10 # 5-20" className={INPUT} />
+      </div>
+      <div>
+        <label className="block text-white/30 text-[10px] tracking-[0.25em] uppercase mb-1.5">Barrio</label>
+        <input type="text" value={fields.barrio} onChange={(e) => onChange('barrio', e.target.value)}
+          placeholder="El Poblado" className={INPUT} />
       </div>
     </div>
   );
 }
 
 /* ─── Payment modal ──────────────────────────────────────────────────────── */
-function MetodoPagoModal({ items, subtotal, token, onClose, onSuccess }) {
-  // step: 'select' | 'wompi' | 'contraentrega'
+function MetodoPagoModal({ items, subtotal, token, isGuest, onClose, onSuccess }) {
   const [step,    setStep]    = useState('select');
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState(null);
   const [success, setSuccess] = useState(null);
-  const [addr,    setAddr]    = useState({ direccion: '', barrio: '', celular: '' });
+  const [addr,    setAddr]    = useState({ nombre: '', email: '', celular: '', direccion: '', barrio: '' });
 
   useEffect(() => {
     const h = (e) => { if (e.key === 'Escape' && !loading) onClose(); };
@@ -174,16 +253,39 @@ function MetodoPagoModal({ items, subtotal, token, onClose, onSuccess }) {
     talla:       i.talla ?? null,
   }));
 
-  /* Separar */
+  /* ── Validation ── */
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  const validateAddress = () => {
+    if (isGuest && !addr.nombre.trim()) { setError('Ingresa tu nombre completo.'); return false; }
+    if (isGuest && !addr.email.trim())  { setError('Ingresa tu email.'); return false; }
+    if (isGuest && !emailRegex.test(addr.email.trim())) { setError('Ingresa un email válido (ej. juan@gmail.com)'); return false; }
+    if (!addr.celular.trim())           { setError('Ingresa tu número de celular.'); return false; }
+    return true;
+  };
+
+  /* ── Separar ── */
   const handleSeparar = async () => {
     setLoading(true);
     setError(null);
     try {
-      await axios.post(
-        'http://localhost:8000/api/pedidos/separar',
-        { items: pedidoItems },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      if (isGuest) {
+        if (!validateAddress()) { setLoading(false); return; }
+        await axios.post('http://localhost:8000/api/pedidos/invitado', {
+          items:          pedidoItems,
+          nombre:         addr.nombre.trim(),
+          email:          addr.email.trim(),
+          celular:        addr.celular.trim(),
+          direccion_envio: [addr.direccion, addr.barrio].filter(Boolean).join(', '),
+          metodo_pago:    'tienda',
+        });
+      } else {
+        await axios.post(
+          'http://localhost:8000/api/pedidos/separar',
+          { items: pedidoItems },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      }
       setSuccess('¡Pedido separado! Tienes 24 horas para pagar en tienda.');
       onSuccess();
     } catch (err) {
@@ -193,38 +295,41 @@ function MetodoPagoModal({ items, subtotal, token, onClose, onSuccess }) {
     }
   };
 
-  /* Wompi */
+  /* ── Wompi ── */
   const handleWompi = async () => {
-    if (!addr.direccion.trim() || !addr.barrio.trim() || !addr.celular.trim()) {
-      setError('Completa todos los campos para continuar.');
-      return;
-    }
+    if (!validateAddress()) return;
     setLoading(true);
     setError(null);
     try {
-      const pedidoRes = await axios.post(
-        'http://localhost:8000/api/pedidos/',
-        {
-          items:     pedidoItems,
-          direccion: addr.direccion.trim(),
-          barrio:    addr.barrio.trim(),
-          celular:   addr.celular.trim(),
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      const pedidoId = pedidoRes.data?.id;
-      const pagoRes = await axios.post(
-        `http://localhost:8000/api/pagos/iniciar/${pedidoId}`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      const wompiUrl =
-        pagoRes.data?.url ||
-        pagoRes.data?.wompi_url ||
-        pagoRes.data?.redirect_url ||
-        pagoRes.data?.link;
-      onSuccess();
-      window.location.href = wompiUrl;
+      if (isGuest) {
+        const res = await axios.post('http://localhost:8000/api/pedidos/invitado', {
+          items:          pedidoItems,
+          nombre:         addr.nombre.trim(),
+          email:          addr.email.trim(),
+          celular:        addr.celular.trim(),
+          direccion_envio: [addr.direccion, addr.barrio].filter(Boolean).join(', '),
+          metodo_pago:    'wompi',
+        });
+        const wompiUrl = res.data?.wompi_url ?? res.data?.url ?? res.data?.link;
+        if (!wompiUrl) { setError('No se pudo generar el link de pago. Intenta de nuevo.'); setLoading(false); return; }
+        onSuccess();
+        window.location.href = wompiUrl;
+      } else {
+        const pedidoRes = await axios.post(
+          'http://localhost:8000/api/pedidos/',
+          { items: pedidoItems, direccion: addr.direccion.trim(), barrio: addr.barrio.trim(), celular: addr.celular.trim() },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        const pedidoId = pedidoRes.data?.id;
+        const pagoRes = await axios.post(
+          `http://localhost:8000/api/pagos/iniciar/${pedidoId}`,
+          {},
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        const wompiUrl = pagoRes.data?.url || pagoRes.data?.wompi_url || pagoRes.data?.redirect_url || pagoRes.data?.link;
+        onSuccess();
+        window.location.href = wompiUrl;
+      }
     } catch (err) {
       setError(err.response?.data?.detail || err.response?.data?.message || 'Error al procesar el pago.');
     } finally {
@@ -232,24 +337,32 @@ function MetodoPagoModal({ items, subtotal, token, onClose, onSuccess }) {
     }
   };
 
-  /* Contraentrega */
+  /* ── Contraentrega ── */
   const handleContraentrega = async () => {
-    if (!addr.direccion.trim() || !addr.barrio.trim() || !addr.celular.trim()) {
-      setError('Completa todos los campos para continuar.');
-      return;
-    }
+    if (!validateAddress()) return;
     setLoading(true);
     setError(null);
     try {
-      await axios.post(
-        'http://localhost:8000/api/pedidos/',
-        {
-          items:  pedidoItems,
-          notas:  `Contraentrega: ${addr.direccion.trim()}, ${addr.barrio.trim()}, cel: ${addr.celular.trim()}`,
-          celular: addr.celular.trim(),
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      if (isGuest) {
+        await axios.post('http://localhost:8000/api/pedidos/invitado', {
+          items:          pedidoItems,
+          nombre:         addr.nombre.trim(),
+          email:          addr.email.trim(),
+          celular:        addr.celular.trim(),
+          direccion_envio: [addr.direccion, addr.barrio].filter(Boolean).join(', '),
+          metodo_pago:    'contraentrega',
+        });
+      } else {
+        await axios.post(
+          'http://localhost:8000/api/pedidos/',
+          {
+            items:   pedidoItems,
+            notas:   `Contraentrega: ${addr.direccion.trim()}, ${addr.barrio.trim()}, cel: ${addr.celular.trim()}`,
+            celular: addr.celular.trim(),
+          },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      }
       setSuccess('¡Pedido confirmado! Te contactaremos para coordinar la entrega.');
       onSuccess();
     } catch (err) {
@@ -299,7 +412,11 @@ function MetodoPagoModal({ items, subtotal, token, onClose, onSuccess }) {
   const stepTitles = {
     wompi:         'Pagar con Wompi',
     contraentrega: 'Pagar contraentrega',
+    separar:       'Separar y pagar en tienda',
   };
+
+  // For guest, "separar" also needs a form (to collect contact info)
+  const needsForm = step !== 'select' && (step === 'wompi' || step === 'contraentrega' || (step === 'separar' && isGuest));
 
   return (
     <div
@@ -312,7 +429,9 @@ function MetodoPagoModal({ items, subtotal, token, onClose, onSuccess }) {
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 sticky top-0 bg-[#0d0d0d]">
           <div>
-            <p className="text-white/30 text-[10px] tracking-[0.35em] uppercase">Checkout</p>
+            <p className="text-white/30 text-[10px] tracking-[0.35em] uppercase">
+              Checkout{isGuest && <span className="ml-2 text-white/20">· Invitado</span>}
+            </p>
             <p className="text-white text-sm font-bold tracking-wide mt-0.5">
               {step === 'select' ? 'Método de pago' : stepTitles[step]}
             </p>
@@ -341,30 +460,39 @@ function MetodoPagoModal({ items, subtotal, token, onClose, onSuccess }) {
                 Cerrar
               </button>
             </div>
+
           ) : step === 'select' ? (
             /* ── Method selection ── */
             <>
               <p className="text-white/40 text-xs tracking-wide">
                 Total a pagar: <span className="text-white font-bold">{fmtCOP(subtotal)}</span>
               </p>
-              {METHODS.map(({ key, title, desc, icon }) => (
-                <button key={key} onClick={key === 'separar' ? handleSeparar : () => { setStep(key); setError(null); }}
-                  disabled={loading}
-                  className="flex items-start gap-4 p-4 border border-white/10 hover:border-white/30 hover:bg-white/[0.02] text-left transition-colors disabled:opacity-50 group">
-                  <span className="text-white/40 group-hover:text-white/70 transition-colors mt-0.5 shrink-0">{icon}</span>
-                  <div className="flex-1">
-                    <p className="text-white text-sm font-bold tracking-wide mb-1">{title}</p>
-                    <p className="text-white/40 text-xs tracking-wide leading-relaxed">{desc}</p>
-                  </div>
-                  {loading && key === 'separar' ? (
-                    <span className="text-white/40 mt-1 shrink-0"><Spinner /></span>
-                  ) : (
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white/20 group-hover:text-white/50 transition-colors mt-1 shrink-0">
-                      <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
-                    </svg>
-                  )}
-                </button>
-              ))}
+              {METHODS.map(({ key, title, desc, icon }) => {
+                const isDirectAction = key === 'separar' && !isGuest;
+                return (
+                  <button key={key}
+                    onClick={() => {
+                      setError(null);
+                      if (isDirectAction) { handleSeparar(); }
+                      else { setStep(key); }
+                    }}
+                    disabled={loading}
+                    className="flex items-start gap-4 p-4 border border-white/10 hover:border-white/30 hover:bg-white/[0.02] text-left transition-colors disabled:opacity-50 group">
+                    <span className="text-white/40 group-hover:text-white/70 transition-colors mt-0.5 shrink-0">{icon}</span>
+                    <div className="flex-1">
+                      <p className="text-white text-sm font-bold tracking-wide mb-1">{title}</p>
+                      <p className="text-white/40 text-xs tracking-wide leading-relaxed">{desc}</p>
+                    </div>
+                    {loading && isDirectAction ? (
+                      <span className="text-white/40 mt-1 shrink-0"><Spinner /></span>
+                    ) : (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white/20 group-hover:text-white/50 transition-colors mt-1 shrink-0">
+                        <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
+                      </svg>
+                    )}
+                  </button>
+                );
+              })}
               {error && (
                 <div className="px-4 py-3 text-xs border"
                   style={{ color: '#f87171', borderColor: 'rgba(248,113,113,0.25)', background: 'rgba(248,113,113,0.07)' }}>
@@ -372,13 +500,14 @@ function MetodoPagoModal({ items, subtotal, token, onClose, onSuccess }) {
                 </div>
               )}
             </>
-          ) : (
-            /* ── Address form step ── */
+
+          ) : needsForm ? (
+            /* ── Address / contact form ── */
             <>
               <p className="text-white/40 text-xs tracking-wide">
                 Total: <span className="text-white font-bold">{fmtCOP(subtotal)}</span>
               </p>
-              <AddressForm fields={addr} onChange={setField} />
+              <AddressForm fields={addr} onChange={setField} isGuest={isGuest} />
               {error && (
                 <div className="px-4 py-3 text-xs border"
                   style={{ color: '#f87171', borderColor: 'rgba(248,113,113,0.25)', background: 'rgba(248,113,113,0.07)' }}>
@@ -391,15 +520,15 @@ function MetodoPagoModal({ items, subtotal, token, onClose, onSuccess }) {
                   Volver
                 </button>
                 <button
-                  onClick={step === 'wompi' ? handleWompi : handleContraentrega}
+                  onClick={step === 'wompi' ? handleWompi : step === 'separar' ? handleSeparar : handleContraentrega}
                   disabled={loading}
                   className="flex-1 flex items-center justify-center gap-2 bg-white text-black text-[10px] font-bold tracking-[0.25em] uppercase py-3 hover:bg-white/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
                   {loading && <Spinner />}
-                  {loading ? 'Procesando...' : step === 'wompi' ? 'Ir a Wompi' : 'Confirmar pedido'}
+                  {loading ? 'Procesando...' : step === 'wompi' ? 'Ir a Wompi' : step === 'separar' ? 'Confirmar reserva' : 'Confirmar pedido'}
                 </button>
               </div>
             </>
-          )}
+          ) : null}
         </div>
       </div>
     </div>
@@ -415,14 +544,33 @@ export default function CarritoPage() {
   const { usuario, token } = useAuth();
 
   const [mounted,      setMounted]      = useState(false);
+  const [authChoice,   setAuthChoice]   = useState(false);  // show auth choice modal
   const [pagoModal,    setPagoModal]    = useState(false);
+  const [isGuest,      setIsGuest]      = useState(false);
 
   useEffect(() => setMounted(true), []);
 
   const handleCheckout = () => {
     if (!mounted || items.length === 0) return;
-    if (!token || !usuario) { router.push('/login'); return; }
+    if (token && usuario) {
+      // Already logged in → go straight to payment
+      setIsGuest(false);
+      setPagoModal(true);
+    } else {
+      // Not logged in → show auth choice
+      setAuthChoice(true);
+    }
+  };
+
+  const handleGuestChoice = () => {
+    setAuthChoice(false);
+    setIsGuest(true);
     setPagoModal(true);
+  };
+
+  const handleLoginChoice = () => {
+    setAuthChoice(false);
+    router.push('/login');
   };
 
   const handlePaymentSuccess = () => {
@@ -431,11 +579,20 @@ export default function CarritoPage() {
 
   return (
     <>
+      {authChoice && mounted && (
+        <AuthChoiceModal
+          onGuest={handleGuestChoice}
+          onLogin={handleLoginChoice}
+          onClose={() => setAuthChoice(false)}
+        />
+      )}
+
       {pagoModal && mounted && (
         <MetodoPagoModal
           items={items}
           subtotal={subtotal}
           token={token}
+          isGuest={isGuest}
           onClose={() => setPagoModal(false)}
           onSuccess={handlePaymentSuccess}
         />

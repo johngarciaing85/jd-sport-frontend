@@ -17,14 +17,17 @@ export default function Footer() {
             Estilo y calidad en cada prenda.<br />Moda para dama y caballero. <br /> Los precios mas competitivos del hueco.
           </p>
           <div className="flex gap-3">
-            {['WhatsApp', 'TikTok'].map((s) => (
-              <span
-                key={s}
-                className="text-white/30 hover:text-white text-xs tracking-widest uppercase border border-white/10 hover:border-white/30 px-3 py-1.5 cursor-pointer transition-colors"
-              >
-                {s}
-              </span>
-            ))}
+            <span className="text-white/30 hover:text-white text-xs tracking-widest uppercase border border-white/10 hover:border-white/30 px-3 py-1.5 cursor-pointer transition-colors">
+              WhatsApp
+            </span>
+            <a
+              href="https://www.tiktok.com/@jd.sport.store?_r=1&_t=ZS-95FBKgCeOKG"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-white/30 hover:text-white text-xs tracking-widest uppercase border border-white/10 hover:border-white/30 px-3 py-1.5 transition-colors"
+            >
+              TikTok
+            </a>
           </div>
         </div>
 

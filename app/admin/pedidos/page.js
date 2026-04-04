@@ -43,7 +43,24 @@ function fmtFecha(v) {
   if (!v) return '—';
   const d = new Date(v);
   if (isNaN(d)) return v;
-  return d.toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' });
+  return d.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+/* Parse guest contact info from notas field.
+   Expected format (flexible): "[Entrega a domicilio] Nombre: X | Email: Y | Celular: Z | Dirección: W"
+   Returns { nombre, email, celular, direccion } or null if not a guest order. */
+function parseGuestNotas(notas) {
+  if (!notas || !notas.startsWith('[Entrega a domicilio]')) return null;
+  const get = (label) => {
+    const m = notas.match(new RegExp(label + ':\\s*([^|\\n]+)', 'i'));
+    return m ? m[1].trim() : '';
+  };
+  return {
+    nombre:    get('Nombre'),
+    email:     get('Email'),
+    celular:   get('Celular'),
+    direccion: get('Dirección') || get('Direccion'),
+  };
 }
 
 function fmtExpira(v) {
@@ -269,6 +286,119 @@ function ConfirmarFacturaModal({ pedido, token, onClose, onConfirm, sending }) {
   );
 }
 
+/* ─── Detalle pedido modal ───────────────────────────────────────────────── */
+function DetallePedidoModal({ pedido, onClose }) {
+  const guest = parseGuestNotas(pedido.notas);
+  const isGuest = !pedido.usuario && guest;
+
+  useEffect(() => {
+    const h = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  }, [onClose]);
+
+  const Row = ({ label, value }) => value ? (
+    <div className="flex items-start justify-between gap-4 py-2.5 border-b border-white/[0.06] last:border-0">
+      <span className="text-white/30 text-[10px] tracking-[0.25em] uppercase shrink-0">{label}</span>
+      <span className="text-white text-xs text-right tracking-wide leading-relaxed">{value}</span>
+    </div>
+  ) : null;
+
+  const clienteNombre = isGuest
+    ? (guest.nombre || 'Invitado')
+    : (pedido.usuario?.nombre ?? pedido.cliente_nombre ?? pedido.cliente?.nombre ?? pedido.cliente?.email ?? (pedido.usuario_id ? `Usuario #${pedido.usuario_id}` : '—'));
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.88)' }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="bg-[#0d0d0d] border border-white/15 w-full max-w-sm flex flex-col max-h-[85vh] overflow-y-auto">
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 sticky top-0 bg-[#0d0d0d]">
+          <div>
+            <p className="text-white/30 text-[10px] tracking-[0.35em] uppercase">Detalle del pedido</p>
+            <p className="text-white text-sm font-bold tracking-wide mt-0.5">
+              #{pedido.numero_pedido ?? pedido.id}
+            </p>
+          </div>
+          <button onClick={onClose} className="text-white/30 hover:text-white transition-colors p-1">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="px-6 py-5 flex flex-col gap-1">
+          {/* Guest badge */}
+          {isGuest && (
+            <div className="mb-3 flex items-center gap-2">
+              <span className="text-[10px] tracking-[0.2em] uppercase border px-2.5 py-1"
+                style={{ color: '#fb923c', borderColor: 'rgba(251,146,60,0.3)', background: 'rgba(251,146,60,0.08)' }}>
+                Invitado
+              </span>
+              <span className="text-white/25 text-[10px]">Pedido sin cuenta</span>
+            </div>
+          )}
+
+          {/* Order info */}
+          <p className="text-white/25 text-[10px] tracking-[0.3em] uppercase mb-1">Pedido</p>
+          <div className="mb-4">
+            <Row label="ID"      value={`#${pedido.numero_pedido ?? pedido.id}`} />
+            <Row label="Estado"  value={ESTADO_CFG[(pedido.estado ?? '').toLowerCase()]?.label ?? pedido.estado} />
+            <Row label="Total"   value={pedido.total ? COP.format(Number(pedido.total)) : null} />
+            <Row label="Fecha"   value={fmtFecha(pedido.creado_en ?? pedido.fecha_creacion ?? pedido.fecha)} />
+            {pedido.metodo_pago && <Row label="Pago" value={pedido.metodo_pago} />}
+          </div>
+
+          {/* Contact info */}
+          <p className="text-white/25 text-[10px] tracking-[0.3em] uppercase mb-1">
+            {isGuest ? 'Contacto (invitado)' : 'Cliente'}
+          </p>
+          <div className="mb-4">
+            <Row label="Nombre"    value={clienteNombre} />
+            {isGuest && <Row label="Email"    value={guest.email} />}
+            {isGuest && <Row label="Celular"  value={guest.celular} />}
+            {isGuest && <Row label="Dirección" value={guest.direccion} />}
+            {!isGuest && pedido.usuario?.email && <Row label="Email" value={pedido.usuario.email} />}
+          </div>
+
+          {/* Items */}
+          {Array.isArray(pedido.items) && pedido.items.length > 0 && (
+            <>
+              <p className="text-white/25 text-[10px] tracking-[0.3em] uppercase mb-1">Productos</p>
+              <div className="mb-4 flex flex-col gap-2">
+                {pedido.items.map((item, i) => (
+                  <div key={i} className="flex items-center justify-between py-2 border-b border-white/[0.06] last:border-0">
+                    <div>
+                      <p className="text-white text-xs tracking-wide">{item.producto?.nombre ?? item.nombre ?? `Producto #${item.producto_id}`}</p>
+                      {item.talla && <p className="text-white/30 text-[10px] mt-0.5">Talla: {item.talla}</p>}
+                    </div>
+                    <div className="text-right shrink-0 ml-4">
+                      <p className="text-white text-xs font-bold">{item.cantidad}×</p>
+                      {item.precio_unitario && (
+                        <p className="text-white/40 text-[10px]">{COP.format(Number(item.precio_unitario))}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* Raw notas (if any non-guest or extra info) */}
+          {pedido.notas && !isGuest && (
+            <>
+              <p className="text-white/25 text-[10px] tracking-[0.3em] uppercase mb-1">Notas</p>
+              <p className="text-white/50 text-xs leading-relaxed border border-white/[0.06] px-3 py-2">{pedido.notas}</p>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Skeleton ───────────────────────────────────────────────────────────── */
 function TableSkeleton() {
   return (
@@ -309,6 +439,7 @@ export default function AdminPedidos() {
   const [filter,   setFilter]   = useState('todos');
   const [modal,         setModal]         = useState(null);  // pedido for estado modal
   const [facturaModal,  setFacturaModal]  = useState(null);  // pedido for factura confirm
+  const [detalleModal,  setDetalleModal]  = useState(null);  // pedido for detail view
   const [loadKey,       setLoadKey]       = useState(null);  // "${id}_confirmar"
   const [sendingFactura,setSendingFactura]= useState(false);
   const [feedback,      setFeedback]      = useState(null);  // { type:'ok'|'err', msg }
@@ -397,6 +528,12 @@ export default function AdminPedidos() {
 
   return (
     <>
+      {detalleModal && (
+        <DetallePedidoModal
+          pedido={detalleModal}
+          onClose={() => setDetalleModal(null)}
+        />
+      )}
       {facturaModal && (
         <ConfirmarFacturaModal
           pedido={facturaModal}
@@ -530,7 +667,11 @@ export default function AdminPedidos() {
                       {filtered.map((p) => {
                         const estado = (p.estado ?? '').toLowerCase();
                         const expira = fmtExpira(p.expira_en ?? p.expira);
-                        const clienteNombre = p.usuario?.nombre ?? p.cliente_nombre ?? p.cliente?.nombre ?? p.cliente?.email ?? p.cliente ?? (p.usuario_id ? `Usuario #${p.usuario_id}` : '—');
+                        const guest  = parseGuestNotas(p.notas);
+                        const isGuest = !p.usuario && guest;
+                        const clienteNombre = isGuest
+                          ? (guest.nombre || 'Invitado')
+                          : (p.usuario?.nombre ?? p.cliente_nombre ?? p.cliente?.nombre ?? p.cliente?.email ?? p.cliente ?? (p.usuario_id ? `Usuario #${p.usuario_id}` : '—'));
                         return (
                           <tr key={p.id} className="border-b border-white/[0.06] hover:bg-white/[0.02] transition-colors group">
 
@@ -541,7 +682,18 @@ export default function AdminPedidos() {
 
                             {/* Cliente */}
                             <td className="py-3 px-4">
-                              <span className="text-white text-sm tracking-wide">{clienteNombre}</span>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-white text-sm tracking-wide">{clienteNombre}</span>
+                                {isGuest && (
+                                  <span className="text-[9px] tracking-[0.15em] uppercase border px-1.5 py-0.5 shrink-0"
+                                    style={{ color: '#fb923c', borderColor: 'rgba(251,146,60,0.3)', background: 'rgba(251,146,60,0.08)' }}>
+                                    Invitado
+                                  </span>
+                                )}
+                              </div>
+                              {isGuest && guest.celular && (
+                                <p className="text-white/30 text-[10px] mt-0.5 tracking-wide">{guest.celular}</p>
+                              )}
                             </td>
 
                             {/* Total */}
@@ -556,7 +708,7 @@ export default function AdminPedidos() {
 
                             {/* Fecha */}
                             <td className="py-3 px-4 hidden md:table-cell text-white/35 text-xs">
-                              {fmtFecha(p.fecha_creacion ?? p.fecha)}
+                              {fmtFecha(p.creado_en ?? p.fecha_creacion ?? p.fecha)}
                             </td>
 
                             {/* Expira */}
@@ -573,6 +725,9 @@ export default function AdminPedidos() {
                             {/* Actions */}
                             <td className="py-3 px-4 pr-6">
                               <div className="flex items-center gap-1.5 flex-wrap">
+                                <ActionBtn loading={false} onClick={() => setDetalleModal(p)}>
+                                  Ver
+                                </ActionBtn>
                                 {estado === 'separado' && (
                                   <ActionBtn
                                     loading={loadKey === `${p.id}_confirmar`}

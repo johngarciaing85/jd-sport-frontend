@@ -1,7 +1,7 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useCarrito, selectCantidadTotal } from '@/lib/carrito';
 import { useAuth } from '@/lib/auth';
 
@@ -56,13 +56,42 @@ const navLinks = [
 ];
 
 export default function Navbar() {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const [menuOpen,    setMenuOpen]    = useState(false);
+  const [mounted,     setMounted]     = useState(false);
+  const [searchOpen,  setSearchOpen]  = useState(false);
+  const [searchValue, setSearchValue] = useState('');
+  const searchInputRef = useRef(null);
+  const searchWrapRef  = useRef(null);
   const pathname = usePathname();
+  const router   = useRouter();
   const cantidadTotal = useCarrito(selectCantidadTotal);
   const { usuario, logout } = useAuth();
 
   useEffect(() => setMounted(true), []);
+
+  // Focus input when search opens
+  useEffect(() => {
+    if (searchOpen) setTimeout(() => searchInputRef.current?.focus(), 50);
+    else setSearchValue('');
+  }, [searchOpen]);
+
+  // Close on click outside
+  useEffect(() => {
+    if (!searchOpen) return;
+    const handler = (e) => {
+      if (searchWrapRef.current && !searchWrapRef.current.contains(e.target)) setSearchOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [searchOpen]);
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    const q = searchValue.trim();
+    setSearchOpen(false);
+    if (q) router.push(`/productos?q=${encodeURIComponent(q)}`);
+    else router.push('/productos');
+  };
 
   const visibleLinks = mounted && usuario
     ? navLinks.filter(({ href }) => href !== '/login')
@@ -107,6 +136,40 @@ export default function Navbar() {
             </Link>
           )}
         </nav>
+
+        {/* Desktop search */}
+        <div ref={searchWrapRef} className="hidden md:flex items-center">
+          {searchOpen ? (
+            <form onSubmit={handleSearchSubmit} className="flex items-center">
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={searchValue}
+                onChange={(e) => setSearchValue(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Escape') setSearchOpen(false); }}
+                placeholder="Buscar productos..."
+                className="w-48 bg-black border-b border-white/30 text-white text-xs tracking-wide py-1 px-2 placeholder:text-white/25 focus:outline-none focus:border-white/60 transition-colors"
+              />
+              <button type="submit" className="ml-2 text-white/40 hover:text-white transition-colors p-1">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
+                </svg>
+              </button>
+              <button type="button" onClick={() => setSearchOpen(false)} className="text-white/25 hover:text-white/60 transition-colors p-1">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </form>
+          ) : (
+            <button onClick={() => setSearchOpen(true)} className="text-white/40 hover:text-white transition-colors p-1" aria-label="Buscar">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+            </button>
+          )}
+        </div>
 
         {/* Cart + auth + mobile toggle */}
         <div className="flex items-center gap-4">

@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -43,10 +43,17 @@ export default function ProductosPage() {
   const [productos,  setProductos]  = useState([]);
   const [loading,    setLoading]    = useState(true);
   const [error,      setError]      = useState(null);
-  const [genero,     setGenero]     = useState('');        // API value: ''|'hombre'|'mujer'
-  const [categoriaId,setCategoriaId]= useState('');        // category id or ''
+  const [genero,     setGenero]     = useState('');
+  const [categoriaId,setCategoriaId]= useState('');
   const [busqueda,   setBusqueda]   = useState('');
   const [categorias, setCategorias] = useState([]);
+  const searchRef = useRef(null);
+
+  // Read ?q= from URL on mount
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get('q');
+    if (q) setBusqueda(q);
+  }, []);
 
   // Fetch categories once on mount
   useEffect(() => {
@@ -107,20 +114,40 @@ export default function ProductosPage() {
           <div className="flex flex-col gap-6 mb-10">
             {/* Search */}
             <div className="relative max-w-sm">
-              <svg
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30"
-                width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"
-              >
-                <circle cx="11" cy="11" r="8" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
+              {/* Search icon or spinner */}
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none">
+                {loading && busqueda ? (
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="animate-spin">
+                    <polyline points="23 4 23 10 17 10" /><polyline points="1 20 1 14 7 14" />
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                  </svg>
+                ) : (
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  </svg>
+                )}
+              </div>
               <input
+                ref={searchRef}
                 type="text"
                 placeholder="Buscar productos..."
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
-                className="w-full bg-[#111] border border-white/15 text-white text-sm pl-10 pr-4 py-3 placeholder:text-white/25 focus:outline-none focus:border-white/40 transition-colors tracking-wide"
+                className="w-full bg-[#111] border border-white/15 text-white text-sm pl-10 pr-9 py-3 placeholder:text-white/25 focus:outline-none focus:border-white/40 transition-colors tracking-wide"
               />
+              {/* Clear button */}
+              {busqueda && (
+                <button
+                  onClick={() => { setBusqueda(''); searchRef.current?.focus(); }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/25 hover:text-white/70 transition-colors"
+                  aria-label="Limpiar búsqueda"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              )}
             </div>
 
             {/* Gender filter */}

@@ -19,6 +19,146 @@ function Field({ label, children }) {
   );
 }
 
+/* ─── TallasStockEditor ──────────────────────────────────────────────────── */
+function TallasStockEditor({ tallasStock, onChange }) {
+  const [customInput, setCustomInput] = useState('');
+
+  // tallasStock: [{talla: "M", stock: 5}, ...]
+  const names = tallasStock.map((t) => t.talla);
+
+  const addTalla = (nombre) => {
+    const n = nombre.trim().toUpperCase();
+    if (!n || names.includes(n)) return;
+    onChange([...tallasStock, { talla: n, stock: 0 }]);
+  };
+
+  const removeTalla = (nombre) => {
+    onChange(tallasStock.filter((t) => t.talla !== nombre));
+  };
+
+  const setStock = (nombre, stock) => {
+    onChange(tallasStock.map((t) => t.talla === nombre ? { ...t, stock: Math.max(0, Number(stock) || 0) } : t));
+  };
+
+  const togglePredefined = (nombre) => {
+    if (names.includes(nombre)) removeTalla(nombre);
+    else addTalla(nombre);
+  };
+
+  return (
+    <div className="flex flex-col gap-4">
+      <label className="block text-white/30 text-[10px] tracking-[0.25em] uppercase">
+        Tallas y stock por talla
+      </label>
+
+      {/* Predefined chips */}
+      <div className="flex flex-wrap gap-2">
+        {TALLAS_OPCIONES.map((t) => {
+          const active = names.includes(t);
+          return (
+            <button
+              key={t}
+              type="button"
+              onClick={() => togglePredefined(t)}
+              className={`min-w-[44px] h-9 px-3 border text-xs font-medium tracking-wide transition-all ${
+                active
+                  ? 'bg-white text-black border-white'
+                  : 'border-white/20 text-white/50 hover:border-white/50 hover:text-white'
+              }`}
+            >
+              {t}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Custom talla add */}
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={customInput}
+          onChange={(e) => setCustomInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key !== 'Enter') return;
+            e.preventDefault();
+            addTalla(customInput);
+            setCustomInput('');
+          }}
+          placeholder="Talla personalizada (ej. 28, 30)..."
+          className="flex-1 bg-[#111] border border-white/15 text-white text-sm px-4 py-2 placeholder:text-white/20 focus:outline-none focus:border-white/40 transition-colors tracking-wide"
+        />
+        <button
+          type="button"
+          onClick={() => { addTalla(customInput); setCustomInput(''); }}
+          className="px-4 py-2 border border-white/20 text-white/60 hover:text-white hover:border-white/50 text-xs tracking-[0.2em] uppercase transition-colors shrink-0"
+        >
+          Agregar
+        </button>
+      </div>
+
+      {/* Stock rows */}
+      {tallasStock.length > 0 && (
+        <div className="border border-white/10 divide-y divide-white/[0.06]">
+          {/* Header */}
+          <div className="grid grid-cols-[1fr_120px_32px] gap-3 px-4 py-2">
+            <span className="text-white/25 text-[10px] tracking-[0.25em] uppercase">Talla</span>
+            <span className="text-white/25 text-[10px] tracking-[0.25em] uppercase">Stock</span>
+            <span />
+          </div>
+          {tallasStock.map(({ talla, stock }) => (
+            <div key={talla} className="grid grid-cols-[1fr_120px_32px] gap-3 items-center px-4 py-2.5">
+              <div className="flex items-center gap-2">
+                <span className="text-white text-sm font-medium tracking-wide">{talla}</span>
+                {stock === 0 && (
+                  <span className="text-[9px] tracking-wide border px-1.5 py-0.5"
+                    style={{ color: '#f87171', borderColor: 'rgba(248,113,113,0.25)', background: 'rgba(248,113,113,0.06)' }}>
+                    Agotado
+                  </span>
+                )}
+              </div>
+              <input
+                type="number"
+                min="0"
+                step="1"
+                value={stock}
+                onChange={(e) => setStock(talla, e.target.value)}
+                className="w-full bg-[#111] border border-white/15 text-white text-sm px-3 py-1.5 focus:outline-none focus:border-white/40 transition-colors text-center"
+              />
+              <button
+                type="button"
+                onClick={() => removeTalla(talla)}
+                className="flex items-center justify-center text-white/20 hover:text-red-400 transition-colors"
+                aria-label={`Eliminar talla ${talla}`}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="3 6 5 6 21 6" />
+                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                  <path d="M10 11v6M14 11v6" />
+                </svg>
+              </button>
+            </div>
+          ))}
+          {/* Total stock summary */}
+          <div className="grid grid-cols-[1fr_120px_32px] gap-3 items-center px-4 py-2 bg-white/[0.02]">
+            <span className="text-white/30 text-[10px] tracking-[0.2em] uppercase">Total stock</span>
+            <span className="text-white/60 text-sm font-bold text-center">
+              {tallasStock.reduce((acc, t) => acc + t.stock, 0)}
+            </span>
+            <span />
+          </div>
+        </div>
+      )}
+
+      {tallasStock.length === 0 && (
+        <p className="text-white/20 text-xs tracking-wide">
+          Selecciona tallas arriba o agrega una personalizada.
+        </p>
+      )}
+    </div>
+  );
+}
+
+/* ─── ProductoForm ───────────────────────────────────────────────────────── */
 export default function ProductoForm({
   initialData = {},
   token,
@@ -35,7 +175,6 @@ export default function ProductoForm({
     precio:        '',
     precio_oferta: '',
     stock:         '',
-    talla:         '',
     color:         '',
     genero:        'unisex',
     categoria_id:  '',
@@ -44,7 +183,14 @@ export default function ProductoForm({
     ...initialData,
   });
 
-  const [customTalla,  setCustomTalla]  = useState('');
+  // Initialise tallasStock from initialData.tallas_stock or empty
+  const [tallasStock, setTallasStock] = useState(() => {
+    if (Array.isArray(initialData.tallas_stock) && initialData.tallas_stock.length > 0) {
+      return initialData.tallas_stock.map(({ talla, stock }) => ({ talla, stock }));
+    }
+    return [];
+  });
+
   const [imageFile,    setImageFile]    = useState(null);
   const [imagePreview, setImagePreview] = useState(
     initialData.imagen || initialData.imagen_url || null
@@ -83,7 +229,7 @@ export default function ProductoForm({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit(fields, imageFile);
+    onSubmit(fields, imageFile, tallasStock);
   };
 
   return (
@@ -185,9 +331,8 @@ export default function ProductoForm({
             className={INPUT}
           />
         </Field>
-        <Field label="Stock *">
+        <Field label="Stock general">
           <input
-            required
             type="number"
             min="0"
             step="1"
@@ -199,87 +344,8 @@ export default function ProductoForm({
         </Field>
       </div>
 
-      {/* ── Talla chips ── */}
-      <div>
-        <label className="block text-white/30 text-[10px] tracking-[0.25em] uppercase mb-3">Tallas disponibles</label>
-        <div className="flex flex-wrap gap-2">
-          {TALLAS_OPCIONES.map((t) => {
-            const selected = fields.talla.split(',').map((s) => s.trim()).filter(Boolean).includes(t);
-            return (
-              <button
-                key={t}
-                type="button"
-                onClick={() => {
-                  const current = fields.talla.split(',').map((s) => s.trim()).filter(Boolean);
-                  const next = selected ? current.filter((s) => s !== t) : [...current, t];
-                  set('talla', next.join(','));
-                }}
-                className={`min-w-[44px] h-9 px-3 border text-xs font-medium tracking-wide transition-all ${
-                  selected
-                    ? 'bg-white text-black border-white'
-                    : 'border-white/20 text-white/50 hover:border-white/50 hover:text-white'
-                }`}
-              >
-                {t}
-              </button>
-            );
-          })}
-        </div>
-        {/* Custom tallas (not in predefined list) shown as removable chips */}
-        {fields.talla.split(',').map((s) => s.trim()).filter((s) => s && !TALLAS_OPCIONES.includes(s)).map((t) => (
-          <button
-            key={t}
-            type="button"
-            onClick={() => {
-              const next = fields.talla.split(',').map((s) => s.trim()).filter((s) => s && s !== t);
-              set('talla', next.join(','));
-            }}
-            className="flex items-center gap-1.5 min-w-[44px] h-9 px-3 border text-xs font-medium tracking-wide transition-all bg-white text-black border-white"
-          >
-            {t}
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
-        ))}
-      </div>
-
-      {/* Custom talla input */}
-      <div className="flex gap-2 mt-3">
-        <input
-          type="text"
-          value={customTalla}
-          onChange={(e) => setCustomTalla(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key !== 'Enter') return;
-            e.preventDefault();
-            const val = customTalla.trim();
-            if (!val) return;
-            const current = fields.talla.split(',').map((s) => s.trim()).filter(Boolean);
-            if (!current.includes(val)) set('talla', [...current, val].join(','));
-            setCustomTalla('');
-          }}
-          placeholder="Ej. 28, 30, 32..."
-          className="flex-1 bg-[#111] border border-white/15 text-white text-sm px-4 py-2 placeholder:text-white/20 focus:outline-none focus:border-white/40 transition-colors tracking-wide"
-        />
-        <button
-          type="button"
-          onClick={() => {
-            const val = customTalla.trim();
-            if (!val) return;
-            const current = fields.talla.split(',').map((s) => s.trim()).filter(Boolean);
-            if (!current.includes(val)) set('talla', [...current, val].join(','));
-            setCustomTalla('');
-          }}
-          className="px-4 py-2 border border-white/20 text-white/60 hover:text-white hover:border-white/50 text-xs tracking-[0.2em] uppercase transition-colors shrink-0"
-        >
-          Agregar
-        </button>
-      </div>
-
-      {fields.talla && (
-        <p className="text-white/25 text-[10px] tracking-wide mt-2">Seleccionadas: {fields.talla}</p>
-      )}
+      {/* ── Tallas con stock ── */}
+      <TallasStockEditor tallasStock={tallasStock} onChange={setTallasStock} />
 
       {/* ── Details ── */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">

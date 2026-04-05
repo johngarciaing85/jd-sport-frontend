@@ -63,14 +63,13 @@ export default function NuevoProducto() {
     if (!isAdmin(usuario)) { router.replace('/');     return; }
   }, [mounted, token, usuario, router]);
 
-  const handleSubmit = async (fields, imageFile) => {
+  const handleSubmit = async (fields, imageFile, tallasStock = []) => {
     setSaving(true);
     setError(null);
     try {
       const payload = { ...fields };
       if (!payload.precio_oferta) delete payload.precio_oferta;
       if (!payload.categoria_id)  delete payload.categoria_id;
-      // Coerce numerics
       payload.precio = Number(payload.precio) || 0;
       payload.stock  = Number(payload.stock)  || 0;
       if (payload.precio_oferta !== undefined) payload.precio_oferta = Number(payload.precio_oferta) || 0;
@@ -80,14 +79,21 @@ export default function NuevoProducto() {
       });
 
       const id = res.data?.id;
+
+      // Save tallas stock
+      if (id && tallasStock.length > 0) {
+        await axios.post(
+          `http://localhost:8000/api/productos/${id}/tallas`,
+          { tallas: tallasStock },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      }
+
       if (imageFile && id) {
         const form = new FormData();
         form.append('imagen', imageFile);
         await axios.post(`http://localhost:8000/api/productos/${id}/imagen`, form, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data',
-          },
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' },
         });
       }
 

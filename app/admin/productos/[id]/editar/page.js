@@ -115,7 +115,7 @@ export default function EditarProducto() {
       });
   }, [mounted, token, usuario, router, id]);
 
-  const handleSubmit = async (fields, imageFile) => {
+  const handleSubmit = async (fields, imageFile, tallasStock = []) => {
     setSaving(true);
     setSaveError(null);
     try {
@@ -130,14 +130,20 @@ export default function EditarProducto() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
+      // Always sync tallas stock (empty array clears nothing, upserts when provided)
+      if (tallasStock.length > 0) {
+        await axios.post(
+          `http://localhost:8000/api/productos/${id}/tallas`,
+          { tallas: tallasStock },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      }
+
       if (imageFile) {
         const form = new FormData();
         form.append('imagen', imageFile);
         await axios.post(`http://localhost:8000/api/productos/${id}/imagen`, form, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data',
-          },
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' },
         });
       }
 

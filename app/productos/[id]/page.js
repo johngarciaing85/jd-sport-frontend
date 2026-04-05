@@ -56,8 +56,17 @@ function Gallery({ imagenes, nombre }) {
 }
 
 /* ─── Size selector ─────────────────────────────────────────────────────── */
+// tallas: array of strings OR array of {talla, stock, disponible}
 function SizeSelector({ tallas = [], selected, onSelect }) {
   if (!tallas.length) return null;
+
+  // Normalise: always work with {talla, disabled} objects
+  const items = tallas.map((t) =>
+    typeof t === 'string'
+      ? { talla: t, disabled: false }
+      : { talla: t.talla, disabled: t.stock === 0 || t.disponible === false }
+  );
+
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
@@ -67,17 +76,21 @@ function SizeSelector({ tallas = [], selected, onSelect }) {
         )}
       </div>
       <div className="flex flex-wrap gap-2">
-        {tallas.map((t) => (
+        {items.map(({ talla, disabled }) => (
           <button
-            key={t}
-            onClick={() => onSelect(t)}
-            className={`min-w-[44px] h-11 px-3 border text-sm font-medium transition-all ${
-              selected === t
-                ? 'bg-white text-black border-white'
-                : 'border-white/20 text-white/60 hover:border-white/60 hover:text-white'
+            key={talla}
+            onClick={() => !disabled && onSelect(talla)}
+            disabled={disabled}
+            title={disabled ? 'Sin stock' : undefined}
+            className={`min-w-[44px] h-11 px-3 border text-sm font-medium transition-all relative ${
+              disabled
+                ? 'border-white/10 text-white/20 cursor-not-allowed'
+                : selected === talla
+                  ? 'bg-white text-black border-white'
+                  : 'border-white/20 text-white/60 hover:border-white/60 hover:text-white'
             }`}
           >
-            {t}
+            {disabled ? <s>{talla}</s> : talla}
           </button>
         ))}
       </div>
@@ -168,10 +181,17 @@ export default function ProductoDetalle() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  const tallas = producto?.tallas ?? (producto?.talla ? producto.talla.split(',').map((s) => s.trim()).filter(Boolean) : []);
+  // Use tallas_stock (objects with stock info) if present, else fall back to talla string
+  const tallas = (Array.isArray(producto?.tallas_stock) && producto.tallas_stock.length > 0)
+    ? producto.tallas_stock
+    : (producto?.talla ? producto.talla.split(',').map((s) => s.trim()).filter(Boolean) : []);
 
   const handleAgregar = () => {
-    if (tallas.length > 0 && !talla) {
+    const hayTallas = tallas.length > 0;
+    const disponibles = hayTallas
+      ? tallas.filter((t) => typeof t === 'string' || (t.stock > 0))
+      : [];
+    if (disponibles.length > 0 && !talla) {
       setTallaError(true);
       return;
     }
@@ -300,27 +320,55 @@ export default function ProductoDetalle() {
                   </div>
                 )}
 
-                {/* Quantity */}
+                {/* Quantity + stock urgency */}
                 <div>
                   <p className="text-white/40 text-[10px] tracking-[0.3em] uppercase mb-3">Cantidad</p>
-                  <QuantityControl value={cantidad} onChange={setCantidad} />
+                  <div className="flex items-center gap-4 flex-wrap">
+                    <QuantityControl value={cantidad} onChange={setCantidad} />
+                    {typeof producto.stock === 'number' && producto.stock === 0 && (
+                      <span className="text-xs border px-3 py-1 tracking-wide"
+                        style={{ color: '#f87171', borderColor: 'rgba(248,113,113,0.3)', background: 'rgba(248,113,113,0.08)' }}>
+                        Agotado
+                      </span>
+                    )}
+                    {typeof producto.stock === 'number' && producto.stock > 0 && producto.stock <= 3 && (
+                      <span className="text-xs border px-3 py-1 tracking-wide"
+                        style={{ color: '#f87171', borderColor: 'rgba(248,113,113,0.3)', background: 'rgba(248,113,113,0.08)' }}>
+                        ¡Solo quedan {producto.stock} {producto.stock === 1 ? 'unidad disponible' : 'unidades disponibles'}!
+                      </span>
+                    )}
+                    {typeof producto.stock === 'number' && producto.stock > 3 && producto.stock <= 10 && (
+                      <span className="text-xs border px-3 py-1 tracking-wide"
+                        style={{ color: '#fb923c', borderColor: 'rgba(251,146,60,0.3)', background: 'rgba(251,146,60,0.08)' }}>
+                        Pocas unidades disponibles
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Actions */}
-                <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                  <button
-                    onClick={handleAgregar}
-                    className="flex-1 py-4 border border-white/30 text-white text-xs font-bold tracking-[0.3em] uppercase hover:border-white hover:bg-white/5 transition-all"
-                  >
-                    Agregar al carrito
-                  </button>
-                  <button
-                    onClick={handleComprarAhora}
-                    className="flex-1 py-4 bg-white text-black text-xs font-bold tracking-[0.3em] uppercase hover:bg-white/90 transition-colors"
-                  >
-                    Comprar ahora
-                  </button>
-                </div>
+                {typeof producto.stock === 'number' && producto.stock === 0 ? (
+                  <div className="pt-2">
+                    <div className="w-full py-4 border border-white/10 text-white/25 text-xs font-bold tracking-[0.3em] uppercase text-center cursor-not-allowed">
+                      Producto agotado
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                    <button
+                      onClick={handleAgregar}
+                      className="flex-1 py-4 border border-white/30 text-white text-xs font-bold tracking-[0.3em] uppercase hover:border-white hover:bg-white/5 transition-all"
+                    >
+                      Agregar al carrito
+                    </button>
+                    <button
+                      onClick={handleComprarAhora}
+                      className="flex-1 py-4 bg-white text-black text-xs font-bold tracking-[0.3em] uppercase hover:bg-white/90 transition-colors"
+                    >
+                      Comprar ahora
+                    </button>
+                  </div>
+                )}
 
                 {/* Trust signals */}
                 <div className="flex flex-col gap-2 pt-4 border-t border-white/10">

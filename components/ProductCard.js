@@ -1,10 +1,29 @@
 import Link from 'next/link';
 
+function StockBadge({ stock }) {
+  if (stock === 0)    return <span className="text-[9px] tracking-[0.15em] uppercase border px-2 py-0.5 whitespace-nowrap" style={{ color: '#f87171', borderColor: 'rgba(248,113,113,0.3)', background: 'rgba(248,113,113,0.08)' }}>Agotado</span>;
+  if (stock <= 3)     return <span className="text-[9px] tracking-[0.15em] uppercase border px-2 py-0.5 whitespace-nowrap" style={{ color: '#f87171', borderColor: 'rgba(248,113,113,0.3)', background: 'rgba(248,113,113,0.08)' }}>¡Solo {stock} {stock === 1 ? 'unidad' : 'unidades'}!</span>;
+  if (stock <= 10)    return <span className="text-[9px] tracking-[0.15em] uppercase border px-2 py-0.5 whitespace-nowrap" style={{ color: '#fb923c', borderColor: 'rgba(251,146,60,0.3)', background: 'rgba(251,146,60,0.08)' }}>Pocas unidades</span>;
+  return null;
+}
+
 export default function ProductCard({ producto }) {
   const { id, nombre, precio, categoria, genero } = producto;
+
+  // Use tallas_stock (with availability) if present, else fall back to talla string
+  const tallasStock = Array.isArray(producto.tallas_stock) && producto.tallas_stock.length > 0
+    ? producto.tallas_stock
+    : null;
+  const tallasSimple = producto.tallas ?? (producto.talla ? producto.talla.split(',').map((s) => s.trim()).filter(Boolean) : []);
+
+  // Compute overall agotado: from tallas_stock if available, else from stock field
+  const agotado = tallasStock
+    ? tallasStock.every((t) => t.stock === 0)
+    : typeof producto.stock === 'number' && producto.stock === 0;
+
+  const stock = tallasStock ? null : (typeof producto.stock === 'number' ? producto.stock : null);
   const imgSrc = producto.imagen_url ?? producto.imagen ?? null;
   const categoriaNombre = categoria?.nombre ?? categoria ?? null;
-  const tallas = producto.tallas ?? (producto.talla ? producto.talla.split(',').map((s) => s.trim()).filter(Boolean) : []);
 
   return (
     <div className="group flex flex-col bg-[#111] border border-white/10 hover:border-white/25 transition-all duration-300">
@@ -50,18 +69,38 @@ export default function ProductCard({ producto }) {
           </h3>
         </div>
 
-        {tallas.length > 0 && (
+        {tallasStock ? (
           <div className="flex flex-wrap gap-1">
-            {tallas.slice(0, 6).map((t) => (
+            {tallasStock.slice(0, 6).map(({ talla, stock: s }) => (
+              <span
+                key={talla}
+                className="text-[9px] tracking-wide border px-1.5 py-0.5"
+                style={s === 0
+                  ? { color: 'rgba(248,113,113,0.4)', borderColor: 'rgba(248,113,113,0.15)', textDecoration: 'line-through' }
+                  : { color: 'rgba(255,255,255,0.4)', borderColor: 'rgba(255,255,255,0.1)' }
+                }
+              >
+                {talla}
+              </span>
+            ))}
+            {tallasStock.length > 6 && (
+              <span className="text-[9px] tracking-wide text-white/25 px-1 py-0.5">+{tallasStock.length - 6}</span>
+            )}
+          </div>
+        ) : tallasSimple.length > 0 ? (
+          <div className="flex flex-wrap gap-1">
+            {tallasSimple.slice(0, 6).map((t) => (
               <span key={t} className="text-[9px] tracking-wide text-white/40 border border-white/10 px-1.5 py-0.5">
                 {t}
               </span>
             ))}
-            {tallas.length > 6 && (
-              <span className="text-[9px] tracking-wide text-white/25 px-1 py-0.5">+{tallas.length - 6}</span>
+            {tallasSimple.length > 6 && (
+              <span className="text-[9px] tracking-wide text-white/25 px-1 py-0.5">+{tallasSimple.length - 6}</span>
             )}
           </div>
-        )}
+        ) : null}
+
+        {stock !== null && <StockBadge stock={stock} />}
 
         <div className="flex items-center justify-between mt-auto pt-1">
           <span className="text-white font-bold text-base">
@@ -69,9 +108,13 @@ export default function ProductCard({ producto }) {
           </span>
           <Link
             href={`/productos/${id}`}
-            className="text-[10px] tracking-[0.2em] uppercase text-white/60 border border-white/20 px-3 py-1.5 hover:bg-white hover:text-black transition-all duration-200"
+            className={`text-[10px] tracking-[0.2em] uppercase border px-3 py-1.5 transition-all duration-200 ${
+              agotado
+                ? 'text-white/20 border-white/10 pointer-events-none opacity-50'
+                : 'text-white/60 border-white/20 hover:bg-white hover:text-black'
+            }`}
           >
-            Ver más
+            {agotado ? 'Agotado' : 'Ver más'}
           </Link>
         </div>
       </div>

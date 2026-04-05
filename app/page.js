@@ -196,8 +196,8 @@ function GenderCallout() {
   return (
     <section className="grid grid-cols-1 md:grid-cols-2 min-h-[50vh]">
       {[
-        { label: 'Dama', query: 'dama', desc: 'Elegancia y estilo femenino', side: 'left' },
-        { label: 'Caballero', query: 'caballero', desc: 'Moda masculina de vanguardia', side: 'right' },
+        { label: 'Dama', query: 'mujer', desc: 'Elegancia y estilo femenino', side: 'left' },
+        { label: 'Caballero', query: 'hombre', desc: 'Moda masculina de vanguardia', side: 'right' },
       ].map(({ label, query, desc }) => (
         <Link
           key={query}

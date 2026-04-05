@@ -6,6 +6,7 @@ import axios from 'axios';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useCarrito } from '@/lib/carrito';
+import { useAuth } from '@/lib/auth';
 
 /* ─── Image gallery ─────────────────────────────────────────────────────── */
 function Gallery({ imagenes, nombre }) {
@@ -158,11 +159,224 @@ function Toast({ show }) {
   );
 }
 
+/* ─── Stars display ─────────────────────────────────────────────────────── */
+function Stars({ value, max = 5, size = 14, interactive = false, onSelect }) {
+  return (
+    <div className="flex items-center gap-0.5">
+      {Array.from({ length: max }).map((_, i) => (
+        <button
+          key={i}
+          type="button"
+          disabled={!interactive}
+          onClick={() => interactive && onSelect?.(i + 1)}
+          className={interactive ? 'cursor-pointer' : 'cursor-default pointer-events-none'}
+          aria-label={interactive ? `${i + 1} estrellas` : undefined}
+        >
+          <svg
+            width={size}
+            height={size}
+            viewBox="0 0 24 24"
+            fill={i < value ? '#facc15' : 'none'}
+            stroke={i < value ? '#facc15' : 'rgba(255,255,255,0.2)'}
+            strokeWidth="1.5"
+          >
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+          </svg>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* ─── Reviews ────────────────────────────────────────────────────────────── */
+function Resenas({ productoId }) {
+  const { token } = useAuth();
+  const [data, setData]         = useState(null);
+  const [loading, setLoading]   = useState(true);
+  const [formOpen, setFormOpen] = useState(false);
+  const [estrellas, setEstrellas] = useState(5);
+  const [comentario, setComentario] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError]       = useState(null);
+
+  const cargar = () => {
+    setLoading(true);
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    axios
+      .get(`http://localhost:8000/api/productos/${productoId}/resenas`, { headers })
+      .then((r) => setData(r.data))
+      .catch(() => setData(null))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => { cargar(); }, [productoId, token]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setError(null);
+    try {
+      await axios.post(
+        `http://localhost:8000/api/productos/${productoId}/resenas`,
+        { estrellas, comentario: comentario.trim() || null },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setFormOpen(false);
+      setComentario('');
+      setEstrellas(5);
+      cargar();
+    } catch (err) {
+      setError(err.response?.data?.detail || 'No se pudo enviar la reseña.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <section className="border-t border-white/10 pt-12 mt-4">
+      {/* Header */}
+      <div className="flex items-end justify-between gap-4 mb-8">
+        <div>
+          <p className="text-white/30 text-[10px] tracking-[0.4em] uppercase mb-2">Opiniones</p>
+          <div className="flex items-center gap-3">
+            <h2
+              className="text-white font-black text-2xl uppercase tracking-tight"
+              style={{ fontFamily: "'Geist Sans', 'Arial Black', sans-serif" }}
+            >
+              Reseñas
+            </h2>
+            {!loading && data?.promedio && (
+              <div className="flex items-center gap-2">
+                <Stars value={Math.round(data.promedio)} />
+                <span className="text-white/50 text-sm">
+                  {data.promedio.toFixed(1)} ({data.total})
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+        {!loading && data?.puede_resenas && !formOpen && (
+          <button
+            onClick={() => setFormOpen(true)}
+            className="text-xs tracking-[0.25em] uppercase border border-white/20 px-4 py-2.5 text-white/60 hover:text-white hover:border-white/50 transition-colors"
+          >
+            Escribir reseña
+          </button>
+        )}
+      </div>
+
+      {/* Form */}
+      {formOpen && (
+        <form
+          onSubmit={handleSubmit}
+          className="border border-white/15 bg-[#0a0a0a] p-6 mb-8 flex flex-col gap-4"
+        >
+          <p className="text-white/40 text-xs tracking-[0.3em] uppercase">Tu reseña</p>
+
+          <div>
+            <p className="text-white/30 text-[10px] tracking-[0.25em] uppercase mb-2">Calificación</p>
+            <Stars value={estrellas} size={22} interactive onSelect={setEstrellas} />
+          </div>
+
+          <div>
+            <label className="block text-white/30 text-[10px] tracking-[0.25em] uppercase mb-2">
+              Comentario (opcional)
+            </label>
+            <textarea
+              value={comentario}
+              onChange={(e) => setComentario(e.target.value)}
+              rows={3}
+              placeholder="Cuéntanos tu experiencia con este producto..."
+              className="w-full bg-[#111] border border-white/15 text-white text-sm px-4 py-3 placeholder:text-white/20 focus:outline-none focus:border-white/40 transition-colors resize-none"
+            />
+          </div>
+
+          {error && (
+            <p className="text-red-400 text-xs tracking-wide">{error}</p>
+          )}
+
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => { setFormOpen(false); setError(null); }}
+              disabled={submitting}
+              className="flex-1 text-white/40 hover:text-white text-[10px] tracking-[0.25em] uppercase border border-white/10 hover:border-white/30 py-3 transition-colors disabled:opacity-40"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={submitting}
+              className="flex-1 bg-white text-black text-[10px] font-bold tracking-[0.25em] uppercase py-3 hover:bg-white/90 transition-colors disabled:opacity-40"
+            >
+              {submitting ? 'Enviando...' : 'Publicar reseña'}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* List */}
+      {loading && (
+        <div className="flex flex-col gap-4">
+          {[1, 2].map((i) => (
+            <div key={i} className="border border-white/8 p-5 animate-pulse">
+              <div className="flex gap-2 mb-3">
+                {[1,2,3,4,5].map(s => <div key={s} className="w-3.5 h-3.5 bg-white/10 rounded-sm" />)}
+              </div>
+              <div className="h-3 bg-white/5 rounded w-3/4 mb-2" />
+              <div className="h-3 bg-white/5 rounded w-1/2" />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!loading && data?.resenas?.length === 0 && (
+        <div className="border border-white/8 p-10 text-center">
+          <p className="text-white/25 text-sm tracking-wide">
+            Aún no hay reseñas para este producto.
+          </p>
+          {data.puede_resenas && !formOpen && (
+            <button
+              onClick={() => setFormOpen(true)}
+              className="mt-4 text-white/40 hover:text-white text-xs tracking-[0.25em] uppercase underline underline-offset-4 transition-colors"
+            >
+              Sé el primero en opinar →
+            </button>
+          )}
+        </div>
+      )}
+
+      {!loading && data?.resenas?.length > 0 && (
+        <div className="flex flex-col gap-4">
+          {data.resenas.map((r) => (
+            <div key={r.id} className="border border-white/8 bg-[#080808] p-5">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <div className="flex items-center gap-3">
+                  <Stars value={r.estrellas} size={13} />
+                  <span className="text-white/60 text-xs font-medium tracking-wide">{r.nombre_usuario}</span>
+                </div>
+                <span className="text-white/20 text-[10px] tracking-wide">
+                  {new Date(r.creado_en).toLocaleDateString('es-CO', { year: 'numeric', month: 'short', day: 'numeric' })}
+                </span>
+              </div>
+              {r.comentario && (
+                <p className="text-white/50 text-sm leading-relaxed">{r.comentario}</p>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
 /* ─── Page ───────────────────────────────────────────────────────────────── */
 export default function ProductoDetalle() {
   const { id } = useParams();
   const router = useRouter();
   const agregar = useCarrito((s) => s.agregar);
+
+  const { token } = useAuth();
 
   const [producto, setProducto] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -171,6 +385,7 @@ export default function ProductoDetalle() {
   const [cantidad, setCantidad] = useState(1);
   const [tallaError, setTallaError] = useState(false);
   const [toast, setToast] = useState(false);
+  const [ratingInfo, setRatingInfo] = useState(null);
 
   useEffect(() => {
     setLoading(true);
@@ -179,6 +394,14 @@ export default function ProductoDetalle() {
       .then((res) => setProducto(res.data))
       .catch(() => setError('Producto no encontrado.'))
       .finally(() => setLoading(false));
+  }, [id]);
+
+  // Fetch average rating for the title area (lightweight, no auth needed)
+  useEffect(() => {
+    axios
+      .get(`http://localhost:8000/api/productos/${id}/resenas`)
+      .then((r) => setRatingInfo({ promedio: r.data.promedio, total: r.data.total }))
+      .catch(() => {});
   }, [id]);
 
   // Use tallas_stock (objects with stock info) if present, else fall back to talla string
@@ -254,6 +477,7 @@ export default function ProductoDetalle() {
           )}
 
           {!loading && !error && producto && (
+            <div className="flex flex-col gap-16">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 xl:gap-20">
               {/* Gallery */}
               <Gallery
@@ -284,6 +508,16 @@ export default function ProductoDetalle() {
                 >
                   {producto.nombre}
                 </h1>
+
+                {/* Rating summary */}
+                {ratingInfo?.promedio && (
+                  <div className="flex items-center gap-2">
+                    <Stars value={Math.round(ratingInfo.promedio)} size={14} />
+                    <span className="text-white/40 text-xs tracking-wide">
+                      {ratingInfo.promedio.toFixed(1)} · {ratingInfo.total} {ratingInfo.total === 1 ? 'reseña' : 'reseñas'}
+                    </span>
+                  </div>
+                )}
 
                 {/* Price */}
                 <div className="flex items-baseline gap-3">
@@ -384,6 +618,10 @@ export default function ProductoDetalle() {
                   ))}
                 </div>
               </div>
+            </div>
+
+            {/* Reviews */}
+            <Resenas productoId={id} />
             </div>
           )}
         </div>

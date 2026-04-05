@@ -43,6 +43,7 @@ export default function RegistroPage() {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
   const [showPass, setShowPass] = useState(false);
+  const [aceptaTerminos, setAceptaTerminos] = useState(false);
 
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -54,6 +55,10 @@ export default function RegistroPage() {
 
     if (!form.nombre || !form.email || !form.password || !form.confirmar) {
       setError('Por favor completa todos los campos obligatorios.');
+      return;
+    }
+    if (!aceptaTerminos) {
+      setError('Debes aceptar los Términos y Condiciones y la Política de Privacidad para continuar.');
       return;
     }
     if (form.password !== form.confirmar) {
@@ -264,6 +269,38 @@ export default function RegistroPage() {
                 <p className="text-red-400 text-[10px] mt-1.5 tracking-wide">Las contraseñas no coinciden</p>
               )}
             </div>
+
+            {/* Terms checkbox */}
+            <label className="flex items-start gap-3 cursor-pointer group">
+              <div className="relative mt-0.5 shrink-0">
+                <input
+                  type="checkbox"
+                  checked={aceptaTerminos}
+                  onChange={(e) => { setAceptaTerminos(e.target.checked); setError(null); }}
+                  className="sr-only"
+                />
+                <div className={`w-4 h-4 border transition-colors flex items-center justify-center ${
+                  aceptaTerminos ? 'bg-white border-white' : 'bg-transparent border-white/25 group-hover:border-white/50'
+                }`}>
+                  {aceptaTerminos && (
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="3">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  )}
+                </div>
+              </div>
+              <span className="text-white/40 text-xs leading-relaxed tracking-wide">
+                Acepto los{' '}
+                <Link href="/terminos" target="_blank" className="text-white/70 hover:text-white underline underline-offset-2 transition-colors">
+                  Términos y Condiciones
+                </Link>
+                {' '}y la{' '}
+                <Link href="/privacidad" target="_blank" className="text-white/70 hover:text-white underline underline-offset-2 transition-colors">
+                  Política de Privacidad
+                </Link>
+                {' '}de JD Sport.
+              </span>
+            </label>
 
             {/* Submit */}
             <button

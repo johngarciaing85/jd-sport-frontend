@@ -42,6 +42,7 @@ export default function Footer() {
               { href: '/productos', label: 'Productos' },
               { href: '/productos?genero=dama', label: 'Dama' },
               { href: '/productos?genero=caballero', label: 'Caballero' },
+              { href: '/nosotros', label: 'Nosotros' },
               { href: '/login', label: 'Mi cuenta' },
             ].map(({ href, label }) => (
               <li key={href}>
@@ -83,10 +84,18 @@ export default function Footer() {
         </div>
       </div>
 
-      <div className="border-t border-white/10 py-6 text-center">
+      <div className="border-t border-white/10 py-6 px-6 flex flex-col sm:flex-row items-center justify-between gap-3">
         <p className="text-white/25 text-xs tracking-[0.3em] uppercase">
           © 2026 JD Sport — Todos los derechos reservados
         </p>
+        <div className="flex items-center gap-5">
+          <Link href="/terminos" className="text-white/20 hover:text-white/50 text-xs tracking-wide transition-colors">
+            Términos y Condiciones
+          </Link>
+          <Link href="/privacidad" className="text-white/20 hover:text-white/50 text-xs tracking-wide transition-colors">
+            Política de Privacidad
+          </Link>
+        </div>
       </div>
     </footer>
   );

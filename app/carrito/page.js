@@ -227,6 +227,17 @@ function AddressForm({ fields, onChange, isGuest }) {
         <input type="text" value={fields.barrio} onChange={(e) => onChange('barrio', e.target.value)}
           placeholder="El Poblado" className={INPUT} />
       </div>
+      <p className="text-white/25 text-[10px] tracking-wide leading-relaxed pt-1">
+        Al continuar aceptas nuestros{' '}
+        <Link href="/terminos" target="_blank" className="text-white/45 hover:text-white underline underline-offset-2 transition-colors">
+          Términos y Condiciones
+        </Link>
+        {' '}y{' '}
+        <Link href="/privacidad" target="_blank" className="text-white/45 hover:text-white underline underline-offset-2 transition-colors">
+          Política de Privacidad
+        </Link>
+        .
+      </p>
     </div>
   );
 }

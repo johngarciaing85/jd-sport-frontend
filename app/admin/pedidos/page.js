@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import axios from 'axios';
@@ -443,6 +443,8 @@ export default function AdminPedidos() {
   const [loadKey,       setLoadKey]       = useState(null);  // "${id}_confirmar"
   const [sendingFactura,setSendingFactura]= useState(false);
   const [feedback,      setFeedback]      = useState(null);  // { type:'ok'|'err', msg }
+  const [search,        setSearch]        = useState('');
+  const searchRef = useRef(null);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -517,9 +519,19 @@ export default function AdminPedidos() {
     setPedidos((prev) => prev.map((p) => p.id === id ? { ...p, estado: nuevoEstado } : p));
   };
 
-  const filtered = pedidos.filter((p) =>
-    filter === 'todos' ? true : (p.estado ?? '').toLowerCase() === filter
-  );
+  const filtered = pedidos.filter((p) => {
+    const matchFilter = filter === 'todos' ? true : (p.estado ?? '').toLowerCase() === filter;
+    if (!matchFilter) return false;
+    if (!search.trim()) return true;
+    const q = search.trim().toLowerCase();
+    const guest = parseGuestNotas(p.notas);
+    const nombre = guest
+      ? (guest.nombre ?? '').toLowerCase()
+      : (p.usuario?.nombre ?? p.cliente_nombre ?? p.cliente?.nombre ?? p.cliente?.email ?? '').toLowerCase();
+    const id = String(p.id ?? '');
+    const estado = (p.estado ?? '').toLowerCase();
+    return nombre.includes(q) || id.includes(q) || estado.includes(q);
+  });
 
   const counts = FILTERS.reduce((acc, { key }) => {
     acc[key] = key === 'todos' ? pedidos.length : pedidos.filter((p) => (p.estado ?? '').toLowerCase() === key).length;
@@ -608,10 +620,36 @@ export default function AdminPedidos() {
               </div>
             )}
 
-            {/* ── Filters ── */}
+            {/* ── Filters + search ── */}
             {!loading && pedidos.length > 0 && (
-              <div className="mb-6">
+              <div className="flex flex-col sm:flex-row gap-4 mb-6">
                 <FilterChips active={filter} onChange={setFilter} />
+                <div className="relative sm:ml-auto w-full sm:w-72">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-white/25 pointer-events-none">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+                    </svg>
+                  </div>
+                  <input
+                    ref={searchRef}
+                    type="text"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Buscar por cliente, ID o estado…"
+                    className="w-full bg-[#0d0d0d] border border-white/15 text-white text-sm pl-9 pr-8 py-1.5 placeholder:text-white/20 focus:outline-none focus:border-white/40 transition-colors tracking-wide"
+                  />
+                  {search && (
+                    <button
+                      onClick={() => { setSearch(''); searchRef.current?.focus(); }}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/25 hover:text-white/60 transition-colors"
+                      aria-label="Limpiar búsqueda"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
               </div>
             )}
 
@@ -625,12 +663,12 @@ export default function AdminPedidos() {
                   <line x1="3" y1="6" x2="21" y2="6" /><path d="M16 10a4 4 0 0 1-8 0" />
                 </svg>
                 <p className="text-white/25 text-sm tracking-wide">
-                  {filter === 'todos' ? 'No hay pedidos.' : `No hay pedidos ${FILTERS.find(f => f.key === filter)?.label.toLowerCase()}.`}
+                  {search ? 'Sin resultados para tu búsqueda.' : filter === 'todos' ? 'No hay pedidos.' : `No hay pedidos ${FILTERS.find(f => f.key === filter)?.label.toLowerCase()}.`}
                 </p>
-                {filter !== 'todos' && (
-                  <button onClick={() => setFilter('todos')}
+                {(search || filter !== 'todos') && (
+                  <button onClick={() => { setSearch(''); setFilter('todos'); }}
                     className="text-white/30 hover:text-white text-[10px] tracking-[0.2em] uppercase transition-colors">
-                    Ver todos
+                    Limpiar filtros
                   </button>
                 )}
               </div>

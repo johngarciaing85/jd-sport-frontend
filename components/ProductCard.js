@@ -8,7 +8,8 @@ function StockBadge({ stock }) {
 }
 
 export default function ProductCard({ producto }) {
-  const { id, nombre, precio, categoria, genero } = producto;
+  const { id, nombre, precio, precio_oferta, categoria, genero } = producto;
+  const enOferta = precio_oferta != null && Number(precio_oferta) > 0 && Number(precio_oferta) < Number(precio);
 
   // Use tallas_stock (with availability) if present, else fall back to talla string
   const tallasStock = Array.isArray(producto.tallas_stock) && producto.tallas_stock.length > 0
@@ -22,7 +23,13 @@ export default function ProductCard({ producto }) {
     : typeof producto.stock === 'number' && producto.stock === 0;
 
   const stock = tallasStock ? null : (typeof producto.stock === 'number' ? producto.stock : null);
-  const imgSrc = producto.imagen_url ?? producto.imagen ?? null;
+  const imgSrc = (() => {
+    const first = Array.isArray(producto.imagenes) && producto.imagenes.length > 0
+      ? producto.imagenes[0]
+      : null;
+    if (first) return typeof first === 'string' ? first : (first.url ?? first.imagen_url ?? null);
+    return producto.imagen_url ?? producto.imagen ?? null;
+  })();
   const categoriaNombre = categoria?.nombre ?? categoria ?? null;
 
   return (
@@ -48,6 +55,11 @@ export default function ProductCard({ producto }) {
 
         {/* Badges */}
         <div className="absolute top-3 left-3 flex flex-col gap-1.5">
+          {enOferta && (
+            <span className="bg-red-600 text-white text-[10px] font-bold tracking-[0.2em] uppercase px-2.5 py-1">
+              OFERTA
+            </span>
+          )}
           {categoriaNombre && (
             <span className="bg-black/80 backdrop-blur-sm text-white/80 text-[10px] tracking-[0.2em] uppercase px-2.5 py-1">
               {categoriaNombre}
@@ -103,9 +115,16 @@ export default function ProductCard({ producto }) {
         {stock !== null && <StockBadge stock={stock} />}
 
         <div className="flex items-center justify-between mt-auto pt-1">
-          <span className="text-white font-bold text-base">
-            ${typeof precio === 'number' ? precio.toFixed(2) : precio}
-          </span>
+          <div className="flex items-baseline gap-2">
+            <span className="text-white font-bold text-base">
+              ${Number(enOferta ? precio_oferta : precio).toLocaleString('es-CO')}
+            </span>
+            {enOferta && (
+              <span className="text-white/40 text-xs line-through">
+                ${Number(precio).toLocaleString('es-CO')}
+              </span>
+            )}
+          </div>
           <Link
             href={`/productos/${id}`}
             className={`text-[10px] tracking-[0.2em] uppercase border px-3 py-1.5 transition-all duration-200 ${

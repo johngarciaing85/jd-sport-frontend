@@ -86,7 +86,7 @@ function Hero() {
             Explorar colección
           </Link>
           <Link
-            href="/productos?genero=dama"
+            href="/productos?genero=mujer"
             className="px-10 py-4 border border-white/30 text-white text-xs tracking-[0.3em] uppercase hover:border-white/60 hover:bg-white/5 transition-colors"
           >
             Colección dama

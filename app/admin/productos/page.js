@@ -209,8 +209,101 @@ function UploadModal({ producto, token, onClose, onSuccess }) {
   );
 }
 
+/* ─── Delete modal ───────────────────────────────────────────────────────── */
+function DeleteModal({ producto, onClose, onConfirm, deleting }) {
+  useEffect(() => {
+    const handler = (e) => { if (e.key === 'Escape' && !deleting) onClose(); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [onClose, deleting]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.88)' }}
+      onClick={(e) => { if (e.target === e.currentTarget && !deleting) onClose(); }}
+    >
+      <div className="bg-[#0d0d0d] border border-white/15 w-full max-w-sm flex flex-col">
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+          <p className="text-[10px] tracking-[0.35em] uppercase" style={{ color: '#f87171' }}>
+            Eliminar producto
+          </p>
+          <button
+            onClick={onClose}
+            disabled={deleting}
+            className="text-white/30 hover:text-white transition-colors p-1 disabled:opacity-40"
+            aria-label="Cerrar"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="px-6 py-7 flex flex-col gap-4">
+          <div
+            className="flex items-center justify-center w-12 h-12 border mx-auto"
+            style={{ borderColor: 'rgba(248,113,113,0.3)', background: 'rgba(248,113,113,0.08)' }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="1.5">
+              <polyline points="3 6 5 6 21 6" />
+              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+              <path d="M10 11v6M14 11v6" />
+              <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+            </svg>
+          </div>
+          <div className="text-center">
+            <p className="text-white text-sm font-bold tracking-wide mb-1">
+              ¿Estás seguro de eliminar
+            </p>
+            <p className="text-white font-black text-base tracking-wide truncate px-2">
+              {producto.nombre}
+            </p>
+            <p className="text-white/35 text-xs mt-3 tracking-wide leading-relaxed">
+              Esta acción no se puede deshacer.
+            </p>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 pb-6 flex gap-3">
+          <button
+            onClick={onClose}
+            disabled={deleting}
+            className="flex-1 text-white/40 hover:text-white text-[10px] tracking-[0.25em] uppercase border border-white/10 hover:border-white/30 py-3 transition-colors disabled:opacity-40"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={deleting}
+            className="flex-1 flex items-center justify-center gap-2 text-[10px] font-bold tracking-[0.25em] uppercase py-3 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{
+              background: deleting ? 'rgba(248,113,113,0.15)' : 'rgba(248,113,113,0.9)',
+              color: '#000',
+            }}
+          >
+            {deleting ? (
+              <>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="animate-spin">
+                  <polyline points="23 4 23 10 17 10" /><polyline points="1 20 1 14 7 14" />
+                  <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                </svg>
+                Eliminando...
+              </>
+            ) : 'Eliminar'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Product row ────────────────────────────────────────────────────────── */
-function ProductRow({ producto, onOpenModal }) {
+function ProductRow({ producto, onOpenModal, onDelete }) {
   const imgSrc = producto.imagen || producto.imagen_url || null;
 
   return (
@@ -258,20 +351,24 @@ function ProductRow({ producto, onOpenModal }) {
 
       {/* Stock */}
       <td className="py-3 px-4 hidden md:table-cell">
-        {producto.stock != null ? (
-          <span
-            className="text-sm font-bold"
-            style={{
-              color:
-                Number(producto.stock) <= 2  ? '#f87171' :
-                Number(producto.stock) <= 10 ? '#facc15' : '#4ade80',
-            }}
-          >
-            {producto.stock}
-          </span>
-        ) : (
-          <span className="text-white/25 text-xs">—</span>
-        )}
+        {(() => {
+          const totalStock = Array.isArray(producto.tallas_stock) && producto.tallas_stock.length > 0
+            ? producto.tallas_stock.reduce((sum, t) => sum + (Number(t.stock) || 0), 0)
+            : producto.stock != null ? Number(producto.stock) : null;
+          if (totalStock === null) return <span className="text-white/25 text-xs">—</span>;
+          return (
+            <span
+              className="text-sm font-bold"
+              style={{
+                color:
+                  totalStock <= 2  ? '#f87171' :
+                  totalStock <= 10 ? '#facc15' : '#4ade80',
+              }}
+            >
+              {totalStock}
+            </span>
+          );
+        })()}
       </td>
 
       {/* Actions */}
@@ -296,6 +393,17 @@ function ProductRow({ producto, onOpenModal }) {
               <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
             </svg>
             Imagen
+          </button>
+          <button
+            onClick={() => onDelete(producto)}
+            className="flex items-center gap-1.5 text-white/25 hover:text-[#f87171] text-[10px] tracking-[0.2em] uppercase border border-white/10 hover:border-[rgba(248,113,113,0.4)] px-3 py-1.5 transition-colors group-hover:border-white/20"
+          >
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="3 6 5 6 21 6" />
+              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+              <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+            </svg>
+            Eliminar
           </button>
         </div>
       </td>
@@ -325,6 +433,8 @@ export default function AdminProductos() {
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
   const [modal, setModal] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null); // producto a eliminar
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -361,6 +471,30 @@ export default function AdminProductos() {
     fetchProductos();
   }, [mounted, token, usuario, router, fetchProductos]);
 
+  // Re-fetch when the tab regains focus (e.g. returning from edit page)
+  useEffect(() => {
+    if (!mounted) return;
+    const onFocus = () => fetchProductos();
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [mounted, fetchProductos]);
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await axios.delete(`http://localhost:8000/api/productos/${deleteTarget.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setProductos((prev) => prev.filter((p) => p.id !== deleteTarget.id));
+      setDeleteTarget(null);
+    } catch (err) {
+      console.error('[Delete] error →', err.response?.status, err.response?.data);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const handleSuccess = (id, url) => {
     setProductos((prev) =>
       prev.map((p) => p.id === id ? { ...p, imagen: url, imagen_url: url } : p)
@@ -384,6 +518,14 @@ export default function AdminProductos() {
           token={token}
           onClose={() => setModal(null)}
           onSuccess={handleSuccess}
+        />
+      )}
+      {deleteTarget && (
+        <DeleteModal
+          producto={deleteTarget}
+          onClose={() => setDeleteTarget(null)}
+          onConfirm={handleDelete}
+          deleting={deleting}
         />
       )}
 
@@ -561,7 +703,7 @@ export default function AdminProductos() {
                     </thead>
                     <tbody>
                       {filtered.map((p) => (
-                        <ProductRow key={p.id} producto={p} onOpenModal={setModal} />
+                        <ProductRow key={p.id} producto={p} onOpenModal={setModal} onDelete={setDeleteTarget} />
                       ))}
                     </tbody>
                   </table>

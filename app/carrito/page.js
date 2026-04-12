@@ -272,6 +272,7 @@ function MetodoPagoModal({ items, subtotal, token, isGuest, onClose, onSuccess }
     if (isGuest && !addr.email.trim())  { setError('Ingresa tu email.'); return false; }
     if (isGuest && !emailRegex.test(addr.email.trim())) { setError('Ingresa un email válido (ej. juan@gmail.com)'); return false; }
     if (!addr.celular.trim())           { setError('Ingresa tu número de celular.'); return false; }
+    if (!addr.direccion.trim())         { setError('La dirección de entrega es obligatoria.'); return false; }
     return true;
   };
 
@@ -321,8 +322,13 @@ function MetodoPagoModal({ items, subtotal, token, isGuest, onClose, onSuccess }
           direccion_envio: [addr.direccion, addr.barrio].filter(Boolean).join(', '),
           metodo_pago:    'wompi',
         });
-        const wompiUrl = res.data?.wompi_url ?? res.data?.url ?? res.data?.link;
-        if (!wompiUrl) { setError('No se pudo generar el link de pago. Intenta de nuevo.'); setLoading(false); return; }
+        console.log('[Wompi guest] res.data:', res.data);
+        const wompiUrl = res.data?.wompi_url;
+        if (!wompiUrl) {
+          setError('No se pudo generar el link de pago. Intenta de nuevo.');
+          setLoading(false);
+          return;
+        }
         onSuccess();
         window.location.href = wompiUrl;
       } else {
@@ -337,7 +343,12 @@ function MetodoPagoModal({ items, subtotal, token, isGuest, onClose, onSuccess }
           {},
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        const wompiUrl = pagoRes.data?.url || pagoRes.data?.wompi_url || pagoRes.data?.redirect_url || pagoRes.data?.link;
+        const wompiUrl = pagoRes.data?.link_pago ?? pagoRes.data?.url ?? pagoRes.data?.wompi_url ?? pagoRes.data?.redirect_url ?? pagoRes.data?.link;
+        if (!wompiUrl) {
+          setError('No se pudo generar el link de pago.');
+          setLoading(false);
+          return;
+        }
         onSuccess();
         window.location.href = wompiUrl;
       }
@@ -348,46 +359,11 @@ function MetodoPagoModal({ items, subtotal, token, isGuest, onClose, onSuccess }
     }
   };
 
-  /* ── Contraentrega ── */
-  const handleContraentrega = async () => {
-    if (!validateAddress()) return;
-    setLoading(true);
-    setError(null);
-    try {
-      if (isGuest) {
-        await axios.post('http://localhost:8000/api/pedidos/invitado', {
-          items:          pedidoItems,
-          nombre:         addr.nombre.trim(),
-          email:          addr.email.trim(),
-          celular:        addr.celular.trim(),
-          direccion_envio: [addr.direccion, addr.barrio].filter(Boolean).join(', '),
-          metodo_pago:    'contraentrega',
-        });
-      } else {
-        await axios.post(
-          'http://localhost:8000/api/pedidos/',
-          {
-            items:   pedidoItems,
-            notas:   `Contraentrega: ${addr.direccion.trim()}, ${addr.barrio.trim()}, cel: ${addr.celular.trim()}`,
-            celular: addr.celular.trim(),
-          },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-      }
-      setSuccess('¡Pedido confirmado! Te contactaremos para coordinar la entrega.');
-      onSuccess();
-    } catch (err) {
-      setError(err.response?.data?.detail || err.response?.data?.message || 'Error al confirmar el pedido.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const METHODS = [
     {
       key:   'separar',
       title: 'Separar y pagar en tienda',
-      desc:  'Reservamos tu pedido por 24 horas. Paga en nuestra tienda física.',
+      desc:  'Sin costo de envío. Reservamos tu pedido 24 horas, pagas cuando recoges.',
       icon:  (
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
           <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
@@ -406,28 +382,15 @@ function MetodoPagoModal({ items, subtotal, token, isGuest, onClose, onSuccess }
         </svg>
       ),
     },
-    {
-      key:   'contraentrega',
-      title: 'Pagar contraentrega',
-      desc:  'Paga cuando recibas tu pedido.',
-      icon:  (
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-          <rect x="1" y="3" width="15" height="13" />
-          <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
-          <circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" />
-        </svg>
-      ),
-    },
   ];
 
   const stepTitles = {
-    wompi:         'Pagar con Wompi',
-    contraentrega: 'Pagar contraentrega',
-    separar:       'Separar y pagar en tienda',
+    wompi:   'Pagar con Wompi',
+    separar: 'Separar y pagar en tienda',
   };
 
   // For guest, "separar" also needs a form (to collect contact info)
-  const needsForm = step !== 'select' && (step === 'wompi' || step === 'contraentrega' || (step === 'separar' && isGuest));
+  const needsForm = step !== 'select' && (step === 'wompi' || (step === 'separar' && isGuest));
 
   return (
     <div
@@ -531,11 +494,11 @@ function MetodoPagoModal({ items, subtotal, token, isGuest, onClose, onSuccess }
                   Volver
                 </button>
                 <button
-                  onClick={step === 'wompi' ? handleWompi : step === 'separar' ? handleSeparar : handleContraentrega}
+                  onClick={step === 'wompi' ? handleWompi : handleSeparar}
                   disabled={loading}
                   className="flex-1 flex items-center justify-center gap-2 bg-white text-black text-[10px] font-bold tracking-[0.25em] uppercase py-3 hover:bg-white/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
                   {loading && <Spinner />}
-                  {loading ? 'Procesando...' : step === 'wompi' ? 'Ir a Wompi' : step === 'separar' ? 'Confirmar reserva' : 'Confirmar pedido'}
+                  {loading ? 'Procesando...' : step === 'wompi' ? 'Ir a Wompi' : 'Confirmar reserva'}
                 </button>
               </div>
             </>

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import axios from 'axios';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import ProductCard from '@/components/ProductCard';
 import { useCarrito } from '@/lib/carrito';
 import { useAuth } from '@/lib/auth';
 
@@ -100,20 +101,28 @@ function SizeSelector({ tallas = [], selected, onSelect }) {
 }
 
 /* ─── Quantity control ───────────────────────────────────────────────────── */
-function QuantityControl({ value, onChange }) {
+function QuantityControl({ value, onChange, max = 99 }) {
+  const atMax = value >= max;
+  const disabled = max === 0;
   return (
     <div className="flex items-center border border-white/20 w-fit">
       <button
         onClick={() => onChange(Math.max(1, value - 1))}
-        className="w-11 h-11 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/5 transition-colors text-lg"
+        disabled={disabled}
+        className={`w-11 h-11 flex items-center justify-center transition-colors text-lg ${
+          disabled ? 'text-white/15 cursor-not-allowed' : 'text-white/60 hover:text-white hover:bg-white/5'
+        }`}
         aria-label="Reducir cantidad"
       >
         −
       </button>
-      <span className="w-12 text-center text-white text-sm font-medium">{value}</span>
+      <span className="w-12 text-center text-white text-sm font-medium">{disabled ? 0 : value}</span>
       <button
-        onClick={() => onChange(value + 1)}
-        className="w-11 h-11 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/5 transition-colors text-lg"
+        onClick={() => onChange(Math.min(value + 1, max))}
+        disabled={atMax || disabled}
+        className={`w-11 h-11 flex items-center justify-center transition-colors text-lg ${
+          atMax || disabled ? 'text-white/15 cursor-not-allowed' : 'text-white/60 hover:text-white hover:bg-white/5'
+        }`}
         aria-label="Aumentar cantidad"
       >
         +
@@ -370,6 +379,46 @@ function Resenas({ productoId }) {
   );
 }
 
+/* ─── Related products ───────────────────────────────────────────────────── */
+function RelatedProducts({ categoriaId, categoriaNombre, currentId }) {
+  const [products, setProducts] = useState([]);
+
+  useEffect(() => {
+    if (!categoriaId) return;
+    axios
+      .get(`http://localhost:8000/api/productos/?categoria_id=${categoriaId}&tamano=4`)
+      .then((r) => {
+        const items = Array.isArray(r.data) ? r.data : (r.data?.items ?? r.data?.productos ?? []);
+        setProducts(items.filter((p) => String(p.id) !== String(currentId)).slice(0, 4));
+      })
+      .catch(() => {});
+  }, [categoriaId, currentId]);
+
+  if (!products.length) return null;
+
+  return (
+    <section className="border-t border-white/10 pt-12 mt-4">
+      <div className="mb-8">
+        <p className="text-white/30 text-[10px] tracking-[0.4em] uppercase mb-2">
+          {categoriaNombre ?? 'Misma categoría'}
+        </p>
+        <h2
+          className="text-white font-black text-2xl uppercase tracking-tight"
+          style={{ fontFamily: "'Geist Sans', 'Arial Black', sans-serif" }}
+        >
+          También te puede interesar
+        </h2>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {products.map((p) => (
+          <ProductCard key={p.id} producto={p} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
 /* ─── Page ───────────────────────────────────────────────────────────────── */
 export default function ProductoDetalle() {
   const { id } = useParams();
@@ -404,6 +453,31 @@ export default function ProductoDetalle() {
       .catch(() => {});
   }, [id]);
 
+  // True when every talla is out of stock, or the product-level stock is 0
+  const agotado = (() => {
+    if (Array.isArray(producto?.tallas_stock) && producto.tallas_stock.length > 0) {
+      return producto.tallas_stock.every((t) => t.stock === 0);
+    }
+    return typeof producto?.stock === 'number' && producto.stock === 0;
+  })();
+
+  // Stock for the selected talla
+  const stockTalla = (() => {
+    if (!talla || !producto) return null;
+    const tallaObj = Array.isArray(producto.tallas_stock)
+      ? producto.tallas_stock.find((t) => t.talla === talla)
+      : null;
+    return tallaObj?.stock ?? producto.stock ?? 99;
+  })();
+
+  // Reset cantidad to 1 when talla changes
+  useEffect(() => { setCantidad(1); }, [talla]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Clamp cantidad if stockTalla drops below current value
+  useEffect(() => {
+    if (stockTalla !== null && cantidad > stockTalla) setCantidad(stockTalla > 0 ? stockTalla : 1);
+  }, [stockTalla]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Use tallas_stock (objects with stock info) if present, else fall back to talla string
   const tallas = (Array.isArray(producto?.tallas_stock) && producto.tallas_stock.length > 0)
     ? producto.tallas_stock
@@ -424,12 +498,25 @@ export default function ProductoDetalle() {
   };
 
   const handleComprarAhora = () => {
+    if (tallas.length > 0 && !talla) {
+      setTallaError(true);
+      document.querySelector('[data-talla-selector]')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
     handleAgregar();
     router.push('/carrito');
   };
 
-  const imgSrc   = producto?.imagen_url ?? producto?.imagen ?? null;
-  const imagenes = producto?.imagenes   ?? (imgSrc ? [imgSrc] : []);
+  const imgSrc = producto?.imagen_url ?? producto?.imagen ?? null;
+  const imagenes = (() => {
+    const raw = producto?.imagenes;
+    if (Array.isArray(raw) && raw.length > 0) {
+      return raw.map((img) =>
+        typeof img === 'string' ? img : (img.url ?? img.imagen_url ?? img.imagen ?? '')
+      ).filter(Boolean);
+    }
+    return imgSrc ? [imgSrc] : [];
+  })();
 
   return (
     <div className="flex flex-col min-h-screen bg-black">
@@ -488,7 +575,7 @@ export default function ProductoDetalle() {
               {/* Info */}
               <div className="flex flex-col gap-6">
                 {/* Category + gender badges */}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   {(producto.categoria?.nombre ?? producto.categoria) && (
                     <span className="text-white/40 text-[10px] tracking-[0.3em] uppercase border border-white/15 px-2.5 py-1">
                       {producto.categoria?.nombre ?? producto.categoria}
@@ -497,6 +584,11 @@ export default function ProductoDetalle() {
                   {producto.genero && (
                     <span className="text-blue-400/70 text-[10px] tracking-[0.3em] uppercase border border-blue-500/20 px-2.5 py-1">
                       {producto.genero}
+                    </span>
+                  )}
+                  {producto.precio_oferta != null && Number(producto.precio_oferta) < Number(producto.precio) && (
+                    <span className="bg-red-600 text-white text-[10px] font-bold tracking-[0.2em] uppercase px-2.5 py-1">
+                      OFERTA
                     </span>
                   )}
                 </div>
@@ -520,16 +612,34 @@ export default function ProductoDetalle() {
                 )}
 
                 {/* Price */}
-                <div className="flex items-baseline gap-3">
-                  <span className="text-white text-3xl font-bold">
-                    ${Number(producto.precio).toLocaleString('es-CO')}
-                  </span>
-                  {producto.precio_original && producto.precio_original > producto.precio && (
-                    <span className="text-white/30 text-lg line-through">
-                      ${Number(producto.precio_original).toLocaleString('es-CO')}
-                    </span>
-                  )}
-                </div>
+                {(() => {
+                  const enOferta = producto.precio_oferta != null && Number(producto.precio_oferta) > 0 && Number(producto.precio_oferta) < Number(producto.precio);
+                  const ahorro = enOferta ? Number(producto.precio) - Number(producto.precio_oferta) : 0;
+                  return (
+                    <div className="flex flex-col gap-1.5">
+                      <div className="flex items-baseline gap-3">
+                        <span className="text-white text-3xl font-bold">
+                          ${Number(enOferta ? producto.precio_oferta : producto.precio).toLocaleString('es-CO')}
+                        </span>
+                        {enOferta && (
+                          <span className="text-white/30 text-lg line-through">
+                            ${Number(producto.precio).toLocaleString('es-CO')}
+                          </span>
+                        )}
+                        {!enOferta && producto.precio_original && producto.precio_original > producto.precio && (
+                          <span className="text-white/30 text-lg line-through">
+                            ${Number(producto.precio_original).toLocaleString('es-CO')}
+                          </span>
+                        )}
+                      </div>
+                      {enOferta && (
+                        <span className="text-green-400 text-sm tracking-wide">
+                          Ahorras ${ahorro.toLocaleString('es-CO')}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {/* Description */}
                 {producto.descripcion && (
@@ -540,15 +650,15 @@ export default function ProductoDetalle() {
 
                 {/* Size selector */}
                 {tallas.length > 0 && (
-                  <div>
+                  <div data-talla-selector>
                     <SizeSelector
                       tallas={tallas}
                       selected={talla}
-                      onSelect={(t) => { setTalla(t); setTallaError(false); }}
+                      onSelect={(t) => { setTalla(t); setTallaError(false); setCantidad(1); }}
                     />
                     {tallaError && (
                       <p className="text-red-400 text-xs mt-2 tracking-wide">
-                        Selecciona una talla
+                        Debes seleccionar una talla para continuar
                       </p>
                     )}
                   </div>
@@ -557,31 +667,40 @@ export default function ProductoDetalle() {
                 {/* Quantity + stock urgency */}
                 <div>
                   <p className="text-white/40 text-[10px] tracking-[0.3em] uppercase mb-3">Cantidad</p>
-                  <div className="flex items-center gap-4 flex-wrap">
-                    <QuantityControl value={cantidad} onChange={setCantidad} />
-                    {typeof producto.stock === 'number' && producto.stock === 0 && (
-                      <span className="text-xs border px-3 py-1 tracking-wide"
-                        style={{ color: '#f87171', borderColor: 'rgba(248,113,113,0.3)', background: 'rgba(248,113,113,0.08)' }}>
-                        Agotado
+                  <div className="flex items-center gap-4">
+                    <QuantityControl
+                      value={cantidad}
+                      onChange={(val) => setCantidad(Math.min(Math.max(1, val), stockTalla ?? 99))}
+                      max={stockTalla ?? 99}
+                    />
+                    {talla && stockTalla === 0 && (
+                      <span style={{ color: '#f87171', fontSize: '10px', letterSpacing: '0.1em' }}>
+                        Agotado en esta talla
                       </span>
                     )}
-                    {typeof producto.stock === 'number' && producto.stock > 0 && producto.stock <= 3 && (
-                      <span className="text-xs border px-3 py-1 tracking-wide"
-                        style={{ color: '#f87171', borderColor: 'rgba(248,113,113,0.3)', background: 'rgba(248,113,113,0.08)' }}>
-                        ¡Solo quedan {producto.stock} {producto.stock === 1 ? 'unidad disponible' : 'unidades disponibles'}!
-                      </span>
-                    )}
-                    {typeof producto.stock === 'number' && producto.stock > 3 && producto.stock <= 10 && (
-                      <span className="text-xs border px-3 py-1 tracking-wide"
-                        style={{ color: '#fb923c', borderColor: 'rgba(251,146,60,0.3)', background: 'rgba(251,146,60,0.08)' }}>
-                        Pocas unidades disponibles
-                      </span>
-                    )}
+                  </div>
+                  <div
+                    style={{
+                      opacity: (talla && stockTalla !== null && stockTalla > 0 && stockTalla <= 5) ? 1 : 0,
+                      transition: 'opacity 0.3s ease',
+                      marginTop: '8px',
+                      pointerEvents: 'none',
+                    }}
+                  >
+                    <span
+                      style={{
+                        color: stockTalla !== null && stockTalla <= 2 ? '#f87171' : '#fb923c',
+                        fontSize: '10px',
+                        letterSpacing: '0.1em',
+                      }}
+                    >
+                      ⚡ Solo quedan {stockTalla} unidades
+                    </span>
                   </div>
                 </div>
 
                 {/* Actions */}
-                {typeof producto.stock === 'number' && producto.stock === 0 ? (
+                {agotado ? (
                   <div className="pt-2">
                     <div className="w-full py-4 border border-white/10 text-white/25 text-xs font-bold tracking-[0.3em] uppercase text-center cursor-not-allowed">
                       Producto agotado
@@ -622,6 +741,13 @@ export default function ProductoDetalle() {
 
             {/* Reviews */}
             <Resenas productoId={id} />
+
+            {/* Related products */}
+            <RelatedProducts
+              categoriaId={producto.categoria?.id ?? producto.categoria_id}
+              categoriaNombre={producto.categoria?.nombre ?? (typeof producto.categoria === 'string' ? producto.categoria : null)}
+              currentId={id}
+            />
             </div>
           )}
         </div>

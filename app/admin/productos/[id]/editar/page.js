@@ -119,16 +119,24 @@ export default function EditarProducto() {
     setSaving(true);
     setSaveError(null);
     try {
-      const payload = { ...fields };
-      if (!payload.precio_oferta) delete payload.precio_oferta;
-      if (!payload.categoria_id)  delete payload.categoria_id;
-      payload.precio = Number(payload.precio) || 0;
-      payload.stock  = Number(payload.stock)  || 0;
-      if (payload.precio_oferta !== undefined) payload.precio_oferta = Number(payload.precio_oferta) || 0;
+      const payload = {
+        nombre:      fields.nombre,
+        descripcion: fields.descripcion,
+        precio:      Number(fields.precio) || 0,
+        color:       fields.color      ?? '',
+        genero:      fields.genero     ?? 'unisex',
+        destacado:   Boolean(fields.destacado),
+        activo:      Boolean(fields.activo),
+      };
+      if (fields.categoria_id) payload.categoria_id = Number(fields.categoria_id);
+      if (fields.precio_oferta) payload.precio_oferta = Number(fields.precio_oferta) || 0;
 
-      await axios.put(`http://localhost:8000/api/productos/${id}`, payload, {
+      console.log('[Editar] payload →', payload);
+
+      const res = await axios.put(`http://localhost:8000/api/productos/${id}`, payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      console.log('[Editar] PUT response →', res.status, res.data);
 
       // Always sync tallas stock (empty array clears nothing, upserts when provided)
       if (tallasStock.length > 0) {
@@ -147,13 +155,18 @@ export default function EditarProducto() {
         });
       }
 
-      router.push('/admin/productos');
+      // Hard redirect garantiza datos frescos sin depender del caché del router
+      window.location.href = '/admin/productos';
     } catch (err) {
-      setSaveError(
-        err.response?.data?.detail ||
-        err.response?.data?.message ||
-        'Error al guardar los cambios.'
-      );
+      console.error('[Editar] error →', err.response?.status, err.response?.data);
+      const data = err.response?.data;
+      const msg =
+        (typeof data === 'string' ? data : null) ||
+        data?.detail ||
+        data?.message ||
+        (Array.isArray(data) ? data.map((e) => e.msg ?? e).join(', ') : null) ||
+        `Error ${err.response?.status ?? ''}: no se pudo guardar.`;
+      setSaveError(msg);
       setSaving(false);
     }
   };

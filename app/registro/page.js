@@ -82,7 +82,7 @@ export default function RegistroPage() {
     };
 
     try {
-      await axios.post('http://localhost:8000/api/auth/registro/', payload);
+      await axios.post('http://localhost:8000/api/usuarios/registro', payload);
       setSuccess(true);
     } catch (err) {
       setError(

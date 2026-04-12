@@ -158,6 +158,109 @@ function TallasStockEditor({ tallasStock, onChange }) {
   );
 }
 
+/* ─── GaleriaImagenes ────────────────────────────────────────────────────── */
+function GaleriaImagenes({ productoId, initialImagenes = [], token }) {
+  const [imagenes, setImagenes] = useState(() =>
+    Array.isArray(initialImagenes) ? initialImagenes : []
+  );
+  const [uploading, setUploading] = useState(false);
+  const inputRef = useRef(null);
+
+  const handleAdd = async (e) => {
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length) return;
+    setUploading(true);
+    try {
+      const form = new FormData();
+      files.forEach((f) => form.append('imagenes', f));
+      const res = await axios.post(
+        `http://localhost:8000/api/productos/${productoId}/imagenes`,
+        form,
+        { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' } }
+      );
+      const nuevas = Array.isArray(res.data)
+        ? res.data
+        : (res.data?.imagenes ?? []);
+      setImagenes((prev) => [...prev, ...nuevas]);
+    } catch (err) {
+      console.error('[Galería] upload error', err.response?.status, err.response?.data);
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = '';
+    }
+  };
+
+  const handleDelete = async (img) => {
+    try {
+      await axios.delete(
+        `http://localhost:8000/api/productos/${productoId}/imagenes/${img.id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setImagenes((prev) => prev.filter((i) => i.id !== img.id));
+    } catch (err) {
+      console.error('[Galería] delete error', err.response?.status, err.response?.data);
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="text-white/30 text-[10px] tracking-[0.25em] uppercase">Galería de imágenes</p>
+      <div className="flex flex-wrap gap-3">
+        {imagenes.map((img) => {
+          const src = img.url ?? img.imagen_url ?? img.imagen ?? null;
+          return (
+            <div key={img.id} className="relative shrink-0 group/thumb" style={{ width: 80, height: 107 }}>
+              {src && (
+                <img src={src} alt="" className="w-full h-full object-cover border border-white/10" />
+              )}
+              <button
+                type="button"
+                onClick={() => handleDelete(img)}
+                className="absolute top-1 right-1 w-5 h-5 flex items-center justify-center bg-black/80 border border-white/20 opacity-0 group-hover/thumb:opacity-100 hover:bg-red-600 hover:border-red-600 transition-all"
+                aria-label="Eliminar imagen"
+              >
+                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+          );
+        })}
+
+        {/* Add tile */}
+        <label
+          className={`shrink-0 flex flex-col items-center justify-center border border-dashed border-white/20 hover:border-white/50 transition-colors ${uploading ? 'opacity-40 pointer-events-none' : 'cursor-pointer'}`}
+          style={{ width: 80, height: 107 }}
+        >
+          {uploading ? (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="animate-spin text-white/30">
+              <polyline points="23 4 23 10 17 10" /><polyline points="1 20 1 14 7 14" />
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+            </svg>
+          ) : (
+            <>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-white/30">
+                <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              <span className="text-white/25 text-[9px] tracking-[0.15em] uppercase mt-1.5">Agregar</span>
+            </>
+          )}
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            multiple
+            className="hidden"
+            disabled={uploading}
+            onChange={handleAdd}
+          />
+        </label>
+      </div>
+      <p className="text-white/20 text-[9px] tracking-wide">JPG · PNG · WEBP · Múltiples archivos</p>
+    </div>
+  );
+}
+
 /* ─── ProductoForm ───────────────────────────────────────────────────────── */
 export default function ProductoForm({
   initialData = {},
@@ -331,17 +434,6 @@ export default function ProductoForm({
             className={INPUT}
           />
         </Field>
-        <Field label="Stock general">
-          <input
-            type="number"
-            min="0"
-            step="1"
-            value={fields.stock}
-            onChange={(e) => set('stock', e.target.value)}
-            placeholder="0"
-            className={INPUT}
-          />
-        </Field>
       </div>
 
       {/* ── Tallas con stock ── */}
@@ -412,6 +504,15 @@ export default function ProductoForm({
           </label>
         ))}
       </div>
+
+      {/* ── Galería (solo en edición) ── */}
+      {initialData.id && (
+        <GaleriaImagenes
+          productoId={initialData.id}
+          initialImagenes={initialData.imagenes}
+          token={token}
+        />
+      )}
 
       {/* ── Error ── */}
       {error && (

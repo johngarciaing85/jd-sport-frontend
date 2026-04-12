@@ -1,8 +1,13 @@
 'use client';
+
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import axios from 'axios';
+import {
+  BarChart, Bar, LineChart, Line,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+} from 'recharts';
 import Navbar from '@/components/Navbar';
 import { useAuth } from '@/lib/auth';
 
@@ -189,6 +194,217 @@ function LowStockTable({ productos = [] }) {
   );
 }
 
+/* ─── Month label helper ─────────────────────────────────────────────────── */
+const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+function mesLabel(mesStr) {
+  // mesStr may be "2024-03", "3", or a number
+  const n = typeof mesStr === 'string' && mesStr.includes('-')
+    ? parseInt(mesStr.split('-')[1], 10)
+    : parseInt(mesStr, 10);
+  return MESES[(n - 1) % 12] ?? mesStr;
+}
+
+/* ─── Custom tooltip ─────────────────────────────────────────────────────── */
+function ChartTooltip({ active, payload, label, isCOP }) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="bg-[#111] border border-white/15 px-4 py-2.5 text-xs tracking-wide">
+      <p className="text-white/40 mb-1 uppercase tracking-[0.2em]">{label}</p>
+      <p className="text-white font-bold">
+        {isCOP ? formatCOP(payload[0].value) : formatNum(payload[0].value)}
+      </p>
+    </div>
+  );
+}
+
+/* ─── Sales charts ───────────────────────────────────────────────────────── */
+function SalesCharts({ token }) {
+  const [chartData,    setChartData]    = useState(null);
+  const [topProductos, setTopProductos] = useState([]);
+  const [ventasCat,    setVentasCat]    = useState([]);
+  const [loading, setLoading]           = useState(true);
+
+  useEffect(() => {
+    if (!token) return;
+    axios
+      .get('http://localhost:8000/api/admin/reportes/ventas', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => {
+        const raw = res.data?.ventas_por_mes ?? [];
+        setChartData(raw.map((d) => ({
+          mes:           mesLabel(d.mes),
+          total_ventas:  Number(d.total)    || 0,
+          total_pedidos: Number(d.cantidad) || 0,
+        })));
+
+        const prods = res.data?.productos_mas_vendidos ?? [];
+        setTopProductos(prods.map((d) => ({
+          nombre:   d.nombre,
+          cantidad: Number(d.cantidad_vendida) || 0,
+          ingresos: Number(d.ingresos)         || 0,
+        })));
+
+        const cats = res.data?.ventas_por_categoria ?? [];
+        setVentasCat(cats.map((d) => ({
+          categoria:    d.categoria,
+          total_ventas: Number(d.total)    || 0,
+          total_pedidos: Number(d.cantidad) || 0,
+        })));
+      })
+      .catch(() => { setChartData([]); setTopProductos([]); setVentasCat([]); })
+      .finally(() => setLoading(false));
+  }, [token]);
+
+  const chartProps = {
+    margin: { top: 4, right: 8, left: 8, bottom: 4 },
+  };
+
+  const axisProps = {
+    tick:     { fill: 'rgba(255,255,255,0.3)', fontSize: 10, fontFamily: 'monospace' },
+    axisLine: { stroke: 'rgba(255,255,255,0.08)' },
+    tickLine: false,
+  };
+
+  const gridProps = {
+    stroke:          'rgba(255,255,255,0.05)',
+    strokeDasharray: '3 3',
+    vertical:        false,
+  };
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-pulse">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="bg-[#0d0d0d] border border-white/10 p-6 h-64" />
+        ))}
+      </div>
+    );
+  }
+
+  if (!chartData?.length) return null;
+
+  const maxCantidad = Math.max(...topProductos.map((p) => p.cantidad), 1);
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+      {/* Bar chart — ventas por mes */}
+      <div className="bg-[#0d0d0d] border border-white/10 p-6">
+        <SectionTitle>Ventas por mes</SectionTitle>
+        <ResponsiveContainer width="100%" height={220}>
+          <BarChart data={chartData} {...chartProps}>
+            <CartesianGrid {...gridProps} />
+            <XAxis dataKey="mes" {...axisProps} />
+            <YAxis
+              {...axisProps}
+              tickFormatter={(v) => {
+                if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`;
+                if (v >= 1_000)     return `$${(v / 1_000).toFixed(0)}k`;
+                return `$${v}`;
+              }}
+              width={52}
+            />
+            <Tooltip
+              content={(p) => <ChartTooltip {...p} isCOP />}
+              cursor={{ fill: 'rgba(255,255,255,0.04)' }}
+            />
+            <Bar dataKey="total_ventas" fill="rgba(255,255,255,0.15)" radius={[2, 2, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Line chart — pedidos por mes */}
+      <div className="bg-[#0d0d0d] border border-white/10 p-6">
+        <SectionTitle>Pedidos por mes</SectionTitle>
+        <ResponsiveContainer width="100%" height={220}>
+          <LineChart data={chartData} {...chartProps}>
+            <CartesianGrid {...gridProps} />
+            <XAxis dataKey="mes" {...axisProps} />
+            <YAxis {...axisProps} allowDecimals={false} width={36} />
+            <Tooltip
+              content={(p) => <ChartTooltip {...p} isCOP={false} />}
+              cursor={{ stroke: 'rgba(255,255,255,0.08)' }}
+            />
+            <Line
+              type="monotone"
+              dataKey="total_pedidos"
+              stroke="rgba(255,255,255,0.7)"
+              strokeWidth={1.5}
+              dot={{ fill: '#fff', r: 3, strokeWidth: 0 }}
+              activeDot={{ r: 4, fill: '#fff', strokeWidth: 0 }}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Bar chart — ventas por categoría */}
+      {ventasCat.length > 0 && (
+        <div className="bg-[#0d0d0d] border border-white/10 p-6">
+          <SectionTitle>Ventas por categoría</SectionTitle>
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={ventasCat} {...chartProps}>
+              <CartesianGrid {...gridProps} />
+              <XAxis dataKey="categoria" {...axisProps} />
+              <YAxis
+                {...axisProps}
+                tickFormatter={(v) => {
+                  if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`;
+                  if (v >= 1_000)     return `$${(v / 1_000).toFixed(0)}k`;
+                  return `$${v}`;
+                }}
+                width={52}
+              />
+              <Tooltip
+                content={(p) => <ChartTooltip {...p} isCOP />}
+                cursor={{ fill: 'rgba(255,255,255,0.04)' }}
+              />
+              <Bar dataKey="total_ventas" fill="rgba(255,255,255,0.15)" radius={[2, 2, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {/* Ranked list — productos más vendidos */}
+      {topProductos.length > 0 && (
+        <div className="bg-[#0d0d0d] border border-white/10 p-6">
+          <SectionTitle>Productos más vendidos</SectionTitle>
+          <div className="flex flex-col gap-3">
+            {topProductos.map((p, i) => {
+              const pct = ((p.cantidad / maxCantidad) * 100).toFixed(1);
+              return (
+                <div key={i} className="flex items-center gap-3">
+                  <span className="w-4 shrink-0 text-white/20 text-xs font-mono">{i + 1}</span>
+                  <span className="w-28 shrink-0 text-white text-xs truncate" title={p.nombre}>
+                    {p.nombre}
+                  </span>
+                  <div className="flex-1 h-5 bg-white/5 overflow-hidden">
+                    <div
+                      className="h-full transition-all duration-700"
+                      style={{
+                        width:       `${pct}%`,
+                        background:  'rgba(255,255,255,0.12)',
+                        borderRight: '2px solid rgba(255,255,255,0.4)',
+                      }}
+                    />
+                  </div>
+                  <span className="w-10 shrink-0 text-right text-white font-bold text-sm">
+                    {formatNum(p.cantidad)}
+                  </span>
+                  <span className="w-20 shrink-0 text-right text-white/40 text-xs">
+                    {formatCOP(p.ingresos)}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}
+
 /* ─── Skeleton ───────────────────────────────────────────────────────────── */
 function DashboardSkeleton() {
   return (
@@ -216,10 +432,13 @@ export default function AdminDashboard() {
   const router = useRouter();
   const { usuario, token } = useAuth();
 
+  const [mounted, setMounted] = useState(false);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
+
+  useEffect(() => setMounted(true), []);
 
   const fetchData = useCallback(() => {
     if (!token) return;
@@ -244,20 +463,18 @@ export default function AdminDashboard() {
   }, [token, router]);
 
   useEffect(() => {
-    if (!token) { router.replace('/login'); return; }
-    console.log('[Dashboard] usuario:', usuario);
-    console.log('[Dashboard] isAdmin:', isAdmin(usuario));
+    if (!mounted) return;
+    if (!token || !usuario) { router.replace('/login'); return; }
     if (!isAdmin(usuario)) { router.replace('/'); return; }
     fetchData();
-  }, [token, usuario, router, fetchData]);
+  }, [mounted, token, usuario, router, fetchData]);
 
-  const ingresos  = data?.ingresos  ?? {};
-  const ventas    = data?.ventas    ?? {};
-  const clientes  = data?.clientes  ?? {};
-  const estadosPedidos    = data?.pedidos_por_estado ?? {};
-  const bajoStock         = data?.productos_bajo_stock ?? [];
-  const solicitudes       = Number(data?.solicitudes_pendientes ?? 0);
-  const pedidosActivos    = Number(data?.pedidos_activos ?? 0);
+  if (!mounted) return null;
+
+  const estadosPedidos = data?.pedidos_por_estado ?? {};
+  const bajoStock      = data?.productos_bajo_stock ?? [];
+  const solicitudes    = Number(data?.solicitudes_pendientes ?? 0);
+  const pedidosActivos = Number(data?.pedidos_activos ?? 0);
 
   const today = new Date().toLocaleDateString('es-CO', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
@@ -363,8 +580,8 @@ export default function AdminDashboard() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <MetricCard
                     label="Hoy"
-                    value={formatCOP(ingresos.hoy)}
-                    sub={`${formatNum(ventas.hoy ?? 0)} orden${(ventas.hoy ?? 0) !== 1 ? 'es' : ''}`}
+                    value={formatCOP(data?.ingresos_hoy)}
+                    sub={`${formatNum(data?.total_ventas_hoy ?? 0)} orden${(data?.total_ventas_hoy ?? 0) !== 1 ? 'es' : ''}`}
                     accent
                     icon={
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -374,8 +591,8 @@ export default function AdminDashboard() {
                   />
                   <MetricCard
                     label="Esta semana"
-                    value={formatCOP(ingresos.semana)}
-                    sub={`${formatNum(ventas.semana ?? 0)} órdenes`}
+                    value={formatCOP(data?.ingresos_semana)}
+                    sub={`${formatNum(data?.total_ventas_semana ?? 0)} órdenes`}
                     icon={
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                         <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
@@ -384,8 +601,8 @@ export default function AdminDashboard() {
                   />
                   <MetricCard
                     label="Este mes"
-                    value={formatCOP(ingresos.mes)}
-                    sub={`${formatNum(ventas.mes ?? 0)} órdenes`}
+                    value={formatCOP(data?.ingresos_mes)}
+                    sub={`${formatNum(data?.total_ventas_mes ?? 0)} órdenes`}
                     icon={
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                         <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
@@ -401,7 +618,7 @@ export default function AdminDashboard() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <MetricCard
                     label="Total clientes"
-                    value={formatNum(clientes.total)}
+                    value={formatNum(data?.total_clientes)}
                     icon={
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
@@ -410,7 +627,7 @@ export default function AdminDashboard() {
                   />
                   <MetricCard
                     label="Nuevos este mes"
-                    value={formatNum(clientes.nuevos_mes ?? clientes.nuevos)}
+                    value={formatNum(data?.nuevos_clientes_mes)}
                     icon={
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                         <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="8.5" cy="7" r="4" /><line x1="20" y1="8" x2="20" y2="14" /><line x1="23" y1="11" x2="17" y2="11" />
@@ -485,6 +702,9 @@ export default function AdminDashboard() {
                   </Link>
                 </div>
               )}
+
+              {/* ── Sales charts ── */}
+              <SalesCharts token={token} />
 
             </div>
           ) : null}

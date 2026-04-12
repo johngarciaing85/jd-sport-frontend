@@ -96,7 +96,7 @@ function Historia() {
               <div className="flex flex-col gap-8">
                 {[
                   { num: '8+', label: 'Años en el mercado' },
-                  { num: '2000+', label: 'Productos disponibles' },
+                  { num: '8000+', label: 'Productos disponibles' },
                   { num: '2', label: 'Líneas de atención' },
                 ].map(({ num, label }) => (
                   <div key={label} className="flex items-center gap-5">

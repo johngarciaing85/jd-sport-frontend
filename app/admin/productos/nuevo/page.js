@@ -99,11 +99,11 @@ export default function NuevoProducto() {
 
       router.push('/admin/productos');
     } catch (err) {
-      setError(
-        err.response?.data?.detail ||
-        err.response?.data?.message ||
-        'Error al crear el producto. Verifica los datos.'
-      );
+      const detail = err.response?.data?.detail;
+      const errorMsg = Array.isArray(detail)
+        ? detail.map(e => e.msg).join(', ')
+        : (typeof detail === 'string' ? detail : (err.response?.data?.message || 'Error al crear el producto. Verifica los datos.'));
+      setError(errorMsg);
       setSaving(false);
     }
   };

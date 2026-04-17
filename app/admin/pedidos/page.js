@@ -151,7 +151,9 @@ function CambiarEstadoModal({ pedido, token, onClose, onSuccess }) {
       onSuccess(pedido.id, res.data?.estado ?? estado);
       onClose();
     } catch (err) {
-      setError(err.response?.data?.detail || err.response?.data?.message || 'Error al actualizar.');
+      const detail = err.response?.data?.detail;
+      const errorMsg = Array.isArray(detail) ? detail.map(e => e.msg).join(', ') : (typeof detail === 'string' ? detail : (err.response?.data?.message || 'Error al actualizar.'));
+      setError(errorMsg);
     } finally {
       setSaving(false);
     }
@@ -360,7 +362,8 @@ function DetallePedidoModal({ pedido, onClose }) {
             {isGuest && <Row label="Email"    value={guest.email} />}
             {isGuest && <Row label="Celular"  value={guest.celular} />}
             {isGuest && <Row label="Dirección" value={guest.direccion} />}
-            {!isGuest && pedido.usuario?.email && <Row label="Email" value={pedido.usuario.email} />}
+            {!isGuest && pedido.usuario?.email    && <Row label="Email"    value={pedido.usuario.email} />}
+            {!isGuest && pedido.usuario?.telefono && <Row label="Teléfono" value={pedido.usuario.telefono} />}
           </div>
 
           {/* Items */}
@@ -491,7 +494,9 @@ export default function AdminPedidos() {
       setPedidos((prev) => prev.map((p) => p.id === pedido.id ? { ...p, estado: 'pagado' } : p));
       showFeedback('ok', `Pago confirmado para pedido #${pedido.numero_pedido ?? pedido.id}.`);
     } catch (err) {
-      showFeedback('err', err.response?.data?.detail || 'Error al confirmar el pago.');
+      const detail = err.response?.data?.detail;
+      const errorMsg = Array.isArray(detail) ? detail.map(e => e.msg).join(', ') : (typeof detail === 'string' ? detail : 'Error al confirmar el pago.');
+      showFeedback('err', errorMsg);
     } finally {
       setLoadKey(null);
     }

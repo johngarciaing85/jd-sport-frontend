@@ -54,11 +54,11 @@ export default function LoginPage() {
       await login(form.email, form.password);
       router.push('/');
     } catch (err) {
-      setError(
-        err.response?.data?.detail ||
-        err.response?.data?.message ||
-        'Credenciales incorrectas. Intenta de nuevo.'
-      );
+      const detail = err.response?.data?.detail;
+      const errorMsg = Array.isArray(detail)
+        ? detail.map(e => e.msg).join(', ')
+        : (typeof detail === 'string' ? detail : (err.response?.data?.message || 'Credenciales incorrectas. Intenta de nuevo.'));
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }

@@ -49,11 +49,11 @@ export default function RestablecerPasswordPage() {
       });
       setSuccess(true);
     } catch (err) {
-      setError(
-        err.response?.data?.detail ||
-        err.response?.data?.message ||
-        'El enlace es inválido o ha expirado. Solicita uno nuevo.'
-      );
+      const detail = err.response?.data?.detail;
+      const errorMsg = Array.isArray(detail)
+        ? detail.map(e => e.msg).join(', ')
+        : (typeof detail === 'string' ? detail : (err.response?.data?.message || 'El enlace es inválido o ha expirado. Solicita uno nuevo.'));
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }

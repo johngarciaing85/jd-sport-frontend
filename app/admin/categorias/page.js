@@ -78,11 +78,11 @@ function CategoriaModal({ categoria, token, onClose, onSuccess }) {
       onSuccess(result, isEdit);
       onClose();
     } catch (err) {
-      setError(
-        err.response?.data?.detail ||
-        err.response?.data?.message ||
-        (isEdit ? 'Error al actualizar.' : 'Error al crear.')
-      );
+      const detail = err.response?.data?.detail;
+      const errorMsg = Array.isArray(detail)
+        ? detail.map(e => e.msg).join(', ')
+        : (typeof detail === 'string' ? detail : (err.response?.data?.message || (isEdit ? 'Error al actualizar.' : 'Error al crear.')));
+      setError(errorMsg);
     } finally {
       setSaving(false);
     }
@@ -199,7 +199,9 @@ function EliminarModal({ categoria, token, onClose, onSuccess }) {
       onSuccess(categoria.id);
       onClose();
     } catch (err) {
-      setError(err.response?.data?.detail || err.response?.data?.message || 'Error al eliminar.');
+      const detail = err.response?.data?.detail;
+      const errorMsg = Array.isArray(detail) ? detail.map(e => e.msg).join(', ') : (typeof detail === 'string' ? detail : (err.response?.data?.message || 'Error al eliminar.'));
+      setError(errorMsg);
     } finally {
       setDeleting(false);
     }

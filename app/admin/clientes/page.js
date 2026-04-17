@@ -162,7 +162,9 @@ export default function AdminClientes() {
       const nombre = cliente.nombre ?? cliente.first_name ?? cliente.email ?? `#${cliente.id}`;
       showFeedback('ok', `${nombre} ${esActivo ? 'desactivado' : 'activado'} correctamente.`);
     } catch (err) {
-      showFeedback('err', err.response?.data?.detail || 'Error al cambiar el estado del cliente.');
+      const detail = err.response?.data?.detail;
+      const errorMsg = Array.isArray(detail) ? detail.map(e => e.msg).join(', ') : (typeof detail === 'string' ? detail : 'Error al cambiar el estado del cliente.');
+      showFeedback('err', errorMsg);
     } finally {
       setTogglingId(null);
     }

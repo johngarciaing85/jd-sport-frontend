@@ -9,7 +9,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import ProductCard from '@/components/ProductCard';
 
-/* ─── Splash screen ─────────────────────────────────────────────────────── */
+/* Splash screen  */
 function Splash({ visible }) {
   return (
     <div
@@ -21,7 +21,7 @@ function Splash({ visible }) {
   );
 }
 
-/* ─── Hero ───────────────────────────────────────────────────────────────── */
+/*  Hero  */
 function Hero() {
   return (
     <section

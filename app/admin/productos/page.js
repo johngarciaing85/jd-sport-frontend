@@ -74,13 +74,11 @@ function UploadModal({ producto, token, onClose, onSuccess }) {
       setStatus({ type: 'ok', msg: 'Imagen actualizada correctamente.' });
       onSuccess(producto.id, url);
     } catch (err) {
-      setStatus({
-        type: 'err',
-        msg:
-          err.response?.data?.detail ||
-          err.response?.data?.message ||
-          'Error al subir la imagen. Intenta de nuevo.',
-      });
+      const detail = err.response?.data?.detail;
+      const errorMsg = Array.isArray(detail)
+        ? detail.map(e => e.msg).join(', ')
+        : (typeof detail === 'string' ? detail : (err.response?.data?.message || 'Error al subir la imagen. Intenta de nuevo.'));
+      setStatus({ type: 'err', msg: errorMsg });
     } finally {
       setUploading(false);
     }

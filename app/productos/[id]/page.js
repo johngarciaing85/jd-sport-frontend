@@ -235,7 +235,9 @@ function Resenas({ productoId }) {
       setEstrellas(5);
       cargar();
     } catch (err) {
-      setError(err.response?.data?.detail || 'No se pudo enviar la reseña.');
+      const detail = err.response?.data?.detail;
+      const errorMsg = Array.isArray(detail) ? detail.map(e => e.msg).join(', ') : (typeof detail === 'string' ? detail : 'No se pudo enviar la reseña.');
+      setError(errorMsg);
     } finally {
       setSubmitting(false);
     }

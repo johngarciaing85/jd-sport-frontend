@@ -8,10 +8,24 @@ import Footer from '@/components/Footer';
 import { useCarrito, selectTotal, selectCantidadTotal } from '@/lib/carrito';
 import { useAuth } from '@/lib/auth';
 
-const SHIPPING = 0;
-
 /* ─── Helpers ────────────────────────────────────────────────────────────── */
 function fmtCOP(n) { return `$${Number(n).toLocaleString('es-CO')}`; }
+
+/* ─── City catalog ───────────────────────────────────────────────────────── */
+const CIUDADES_GRUPOS = [
+  {
+    grupo: 'Medellín y Área Metropolitana',
+    ciudades: ['Medellín','Envigado','Itagüí','Bello','Sabaneta','La Estrella','Copacabana','Caldas','Girardota','Barbosa'],
+  },
+  {
+    grupo: 'Municipios de Antioquia',
+    ciudades: ['Rionegro','Marinilla','El Retiro','Guarne','La Ceja','Santa Fe de Antioquia','Apartadó','Turbo','Caucasia','Jardín','Andes','Sonsón'],
+  },
+  {
+    grupo: 'Otras Ciudades',
+    ciudades: ['Bogotá','Cali','Barranquilla','Bucaramanga','Pereira','Manizales','Cartagena','Cúcuta','Ibagué','Pasto'],
+  },
+];
 
 /* ─── Cart item ──────────────────────────────────────────────────────────── */
 function CartItem({ item }) {
@@ -65,26 +79,35 @@ function CartItem({ item }) {
 }
 
 /* ─── Order summary ──────────────────────────────────────────────────────── */
-function OrderSummary({ subtotal, onCheckout }) {
-  const total = subtotal + SHIPPING;
+function OrderSummary({ subtotal, tarifaEnvio, ciudad, onCheckout }) {
+  const totalConEnvio = subtotal + tarifaEnvio;
   return (
     <div className="bg-[#0d0d0d] border border-white/10 p-6 sticky top-24">
       <h2 className="text-white font-bold text-sm tracking-[0.2em] uppercase mb-6">Resumen del pedido</h2>
       <div className="flex flex-col gap-3 mb-6">
         <div className="flex justify-between text-sm">
-          <span className="text-white/50">Subtotal</span>
+          <span className="text-white/50">Subtotal productos</span>
           <span className="text-white">{fmtCOP(subtotal)}</span>
         </div>
-        <div className="flex justify-between text-sm">
-          <span className="text-white/50">Envío</span>
-          <span className="text-green-400 text-xs tracking-wide">Gratis</span>
+        <div className="flex justify-between text-sm items-start gap-2">
+          <span className="text-white/50 shrink-0">Envío</span>
+          {tarifaEnvio > 0 ? (
+            <span className="text-white text-xs text-right">
+              a {ciudad}: <span className="font-bold">{fmtCOP(tarifaEnvio)}</span>
+            </span>
+          ) : (
+            <span className="text-white/35 text-xs italic text-right">A calcular según ciudad</span>
+          )}
         </div>
       </div>
       <div className="border-t border-white/10 pt-4 mb-6">
         <div className="flex justify-between">
           <span className="text-white font-bold text-sm tracking-wide uppercase">Total</span>
-          <span className="text-white font-black text-xl">{fmtCOP(total)}</span>
+          <span className="text-white font-black text-xl">{fmtCOP(totalConEnvio)}</span>
         </div>
+        {tarifaEnvio === 0 && (
+          <p className="text-white/25 text-[10px] tracking-wide mt-1 text-right">+ envío según ciudad</p>
+        )}
       </div>
       <button onClick={onCheckout}
         className="w-full py-4 bg-white text-black text-xs font-black tracking-[0.3em] uppercase hover:bg-white/90 transition-colors">
@@ -193,8 +216,25 @@ function AuthChoiceModal({ onGuest, onLogin, onClose }) {
 }
 
 /* ─── Address form ───────────────────────────────────────────────────────── */
-function AddressForm({ fields, onChange, isGuest }) {
-  const INPUT = 'w-full bg-[#111] border border-white/15 text-white text-sm px-4 py-2.5 placeholder:text-white/20 focus:outline-none focus:border-white/40 transition-colors tracking-wide';
+function AddressForm({ fields, onChange, isGuest, showEnvio = true, ciudad, onCiudadChange, tarifaEnvio, infoEnvio, onEnvioFound, ciudadError }) {
+  const INPUT    = 'w-full bg-[#111] border border-white/15 text-white text-sm px-4 py-2.5 placeholder:text-white/20 focus:outline-none focus:border-white/40 transition-colors tracking-wide';
+  const SELECT   = 'w-full bg-[#111] border text-sm px-4 py-2.5 focus:outline-none transition-colors tracking-wide appearance-none cursor-pointer pr-10';
+  const [fetching, setFetching] = useState(false);
+
+  const handleCiudadChange = async (value) => {
+    onCiudadChange(value);
+    if (!value) { onEnvioFound(0, null); return; }
+    setFetching(true);
+    try {
+      const res = await axios.post('http://localhost:8000/api/envios/calcular', { ciudad: value });
+      onEnvioFound(res.data.tarifa ?? 0, res.data);
+    } catch {
+      onEnvioFound(0, null);
+    } finally {
+      setFetching(false);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-3">
       {isGuest && (
@@ -217,6 +257,70 @@ function AddressForm({ fields, onChange, isGuest }) {
         <input type="tel" value={fields.celular} onChange={(e) => onChange('celular', e.target.value)}
           placeholder="300 123 4567" className={INPUT} />
       </div>
+
+      {/* ── City selector (delivery only) ── */}
+      {showEnvio && <div>
+        <label className="block text-white/30 text-[10px] tracking-[0.25em] uppercase mb-1.5">Ciudad de entrega *</label>
+        <div className="relative">
+          <select
+            value={ciudad}
+            onChange={(e) => handleCiudadChange(e.target.value)}
+            className={`${SELECT} ${ciudadError ? 'border-[#f87171]/60 text-white' : 'border-white/15 text-white'}`}
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23ffffff60' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`,
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: 'right 14px center',
+            }}
+          >
+            <option value="" style={{ background: '#111', color: '#ffffff60' }}>Selecciona tu ciudad...</option>
+            {CIUDADES_GRUPOS.map(({ grupo, ciudades }) => (
+              <optgroup key={grupo} label={grupo} style={{ background: '#0d0d0d', color: '#ffffff99', fontStyle: 'normal' }}>
+                {ciudades.map((c) => (
+                  <option key={c} value={c} style={{ background: '#111', color: '#fff' }}>{c}</option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+          {fetching && (
+            <span className="absolute right-8 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none">
+              <Spinner />
+            </span>
+          )}
+        </div>
+        {ciudadError && (
+          <p className="text-[#f87171] text-[10px] mt-1.5 tracking-wide">{ciudadError}</p>
+        )}
+
+        {/* Shipping info card */}
+        {!fetching && ciudad && tarifaEnvio > 0 && infoEnvio && (
+          <div className="mt-2 border border-white/10 bg-white/[0.03]">
+            <div className="flex items-start gap-3 px-3 py-2.5">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-white/40 mt-0.5 shrink-0">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                <circle cx="12" cy="10" r="3" />
+              </svg>
+              <div className="flex flex-col gap-0.5">
+                <p className="text-white text-xs font-semibold tracking-wide">
+                  Envío a {infoEnvio.ciudad ?? ciudad}
+                </p>
+                <p className="text-white/50 text-[11px] tracking-wide">
+                  Costo:{' '}
+                  <span className="text-white font-bold">{fmtCOP(tarifaEnvio)}</span>
+                </p>
+                {infoEnvio.tiempo_entrega && (
+                  <p className="text-white/35 text-[10px] tracking-wide">
+                    Entrega: {infoEnvio.tiempo_entrega}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+        {!fetching && ciudad && tarifaEnvio === 0 && infoEnvio === null && (
+          <p className="text-white/30 text-[10px] mt-1.5 tracking-wide italic">Sin tarifa disponible para esta ciudad.</p>
+        )}
+      </div>}
+
       <div>
         <label className="block text-white/30 text-[10px] tracking-[0.25em] uppercase mb-1.5">Dirección</label>
         <input type="text" value={fields.direccion} onChange={(e) => onChange('direccion', e.target.value)}
@@ -242,13 +346,43 @@ function AddressForm({ fields, onChange, isGuest }) {
   );
 }
 
+/* ─── Shipping breakdown ─────────────────────────────────────────────────── */
+function EnvioBreakdown({ subtotal, tarifaEnvio, ciudad }) {
+  const totalConEnvio = subtotal + tarifaEnvio;
+  return (
+    <div className="flex flex-col gap-1.5 py-3 border-y border-white/10">
+      <div className="flex justify-between text-xs">
+        <span className="text-white/40">Subtotal productos</span>
+        <span className="text-white/70">{fmtCOP(subtotal)}</span>
+      </div>
+      <div className="flex justify-between text-xs items-start gap-2">
+        <span className="text-white/40 shrink-0">Envío</span>
+        {tarifaEnvio > 0 ? (
+          <span className="text-white/70 text-right">
+            a {ciudad}: <span className="font-semibold text-white">{fmtCOP(tarifaEnvio)}</span>
+          </span>
+        ) : (
+          <span className="text-white/30 italic">A calcular</span>
+        )}
+      </div>
+      <div className="flex justify-between text-sm pt-1 mt-0.5 border-t border-white/10">
+        <span className="text-white font-bold tracking-wide">Total</span>
+        <span className="text-white font-black">{fmtCOP(totalConEnvio)}</span>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Payment modal ──────────────────────────────────────────────────────── */
-function MetodoPagoModal({ items, subtotal, token, isGuest, onClose, onSuccess }) {
-  const [step,    setStep]    = useState('select');
-  const [loading, setLoading] = useState(false);
-  const [error,   setError]   = useState(null);
-  const [success, setSuccess] = useState(null);
-  const [addr,    setAddr]    = useState({ nombre: '', email: '', celular: '', direccion: '', barrio: '' });
+function MetodoPagoModal({ items, subtotal, token, isGuest, ciudad, onCiudadChange, tarifaEnvio, infoEnvio, onEnvioFound, onClose, onSuccess }) {
+  const [step,        setStep]        = useState('select');
+  const [loading,     setLoading]     = useState(false);
+  const [error,       setError]       = useState(null);
+  const [ciudadError, setCiudadError] = useState(null);
+  const [success,     setSuccess]     = useState(null);
+  const [addr,        setAddr]        = useState({ nombre: '', email: '', celular: '', direccion: '', barrio: '' });
+
+  const totalConEnvio = subtotal + tarifaEnvio;
 
   useEffect(() => {
     const h = (e) => { if (e.key === 'Escape' && !loading) onClose(); };
@@ -268,40 +402,61 @@ function MetodoPagoModal({ items, subtotal, token, isGuest, onClose, onSuccess }
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   const validateAddress = () => {
-    if (isGuest && !addr.nombre.trim()) { setError('Ingresa tu nombre completo.'); return false; }
-    if (isGuest && !addr.email.trim())  { setError('Ingresa tu email.'); return false; }
+    setCiudadError(null);
+    if (step === 'separar') {
+      if (!addr.nombre.trim())                        { setError('Ingresa tu nombre completo.'); return false; }
+      if (!addr.email.trim())                         { setError('Ingresa tu email.'); return false; }
+      if (!emailRegex.test(addr.email.trim()))        { setError('Ingresa un email válido (ej. juan@gmail.com)'); return false; }
+      if (!addr.celular.trim())                       { setError('Ingresa tu número de celular.'); return false; }
+      return true;
+    }
+    // wompi
+    if (isGuest && !addr.nombre.trim())               { setError('Ingresa tu nombre completo.'); return false; }
+    if (isGuest && !addr.email.trim())                { setError('Ingresa tu email.'); return false; }
     if (isGuest && !emailRegex.test(addr.email.trim())) { setError('Ingresa un email válido (ej. juan@gmail.com)'); return false; }
-    if (!addr.celular.trim())           { setError('Ingresa tu número de celular.'); return false; }
-    if (!addr.direccion.trim())         { setError('La dirección de entrega es obligatoria.'); return false; }
+    if (!addr.celular.trim())                         { setError('Ingresa tu número de celular.'); return false; }
+    if (!ciudad.trim())                               { setCiudadError('Selecciona la ciudad de entrega.'); setError('Selecciona la ciudad de entrega.'); return false; }
+    if (!addr.direccion.trim())                       { setError('La dirección de entrega es obligatoria.'); return false; }
     return true;
   };
 
   /* ── Separar ── */
   const handleSeparar = async () => {
+    if (!validateAddress()) return;
     setLoading(true);
     setError(null);
     try {
       if (isGuest) {
-        if (!validateAddress()) { setLoading(false); return; }
-        await axios.post('http://localhost:8000/api/pedidos/invitado', {
-          items:          pedidoItems,
-          nombre:         addr.nombre.trim(),
-          email:          addr.email.trim(),
-          celular:        addr.celular.trim(),
-          direccion_envio: [addr.direccion, addr.barrio].filter(Boolean).join(', '),
-          metodo_pago:    'tienda',
-        });
+        const guestPayload = {
+          items:       pedidoItems,
+          nombre:      addr.nombre.trim(),
+          email:       addr.email.trim(),
+          celular:     addr.celular.trim(),
+          metodo_pago: 'tienda',
+        };
+        console.log('[SEPARAR] guest payload:', guestPayload);
+        const res = await axios.post('http://localhost:8000/api/pedidos/invitado', guestPayload);
+        const pedidoId = res.data?.id ? ` #${res.data.id}` : '';
+        setSuccess(`¡Reserva confirmada! Tu pedido${pedidoId} está separado por 48 horas. Revisa tu correo para los detalles.`);
       } else {
-        await axios.post(
+        const authPayload = {
+          items:   pedidoItems,
+          celular: addr.celular.trim(),
+        };
+        console.log('[SEPARAR] auth payload:', authPayload);
+        const res = await axios.post(
           'http://localhost:8000/api/pedidos/separar',
-          { items: pedidoItems },
+          authPayload,
           { headers: { Authorization: `Bearer ${token}` } }
         );
+        const pedidoId = res.data?.id ? ` #${res.data.id}` : '';
+        setSuccess(`¡Reserva confirmada! Tu pedido${pedidoId} está separado por 48 horas. Revisa tu correo para los detalles.`);
       }
-      setSuccess('¡Pedido separado! Tienes 24 horas para pagar en tienda.');
       onSuccess();
     } catch (err) {
-      setError(err.response?.data?.detail || err.response?.data?.message || 'Error al separar el pedido.');
+      const detail = err.response?.data?.detail;
+      const errorMsg = Array.isArray(detail) ? detail.map(e => e.msg).join(', ') : (typeof detail === 'string' ? detail : (err.response?.data?.message || 'Error al separar el pedido.'));
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -315,14 +470,15 @@ function MetodoPagoModal({ items, subtotal, token, isGuest, onClose, onSuccess }
     try {
       if (isGuest) {
         const res = await axios.post('http://localhost:8000/api/pedidos/invitado', {
-          items:          pedidoItems,
-          nombre:         addr.nombre.trim(),
-          email:          addr.email.trim(),
-          celular:        addr.celular.trim(),
+          items:           pedidoItems,
+          nombre:          addr.nombre.trim(),
+          email:           addr.email.trim(),
+          celular:         addr.celular.trim(),
           direccion_envio: [addr.direccion, addr.barrio].filter(Boolean).join(', '),
-          metodo_pago:    'wompi',
+          ciudad:          ciudad.trim() || undefined,
+          costo_envio:     tarifaEnvio,
+          metodo_pago:     'wompi',
         });
-        console.log('[Wompi guest] res.data:', res.data);
         const wompiUrl = res.data?.wompi_url;
         if (!wompiUrl) {
           setError('No se pudo generar el link de pago. Intenta de nuevo.');
@@ -334,7 +490,14 @@ function MetodoPagoModal({ items, subtotal, token, isGuest, onClose, onSuccess }
       } else {
         const pedidoRes = await axios.post(
           'http://localhost:8000/api/pedidos/',
-          { items: pedidoItems, direccion: addr.direccion.trim(), barrio: addr.barrio.trim(), celular: addr.celular.trim() },
+          {
+            items:       pedidoItems,
+            direccion:   addr.direccion.trim(),
+            barrio:      addr.barrio.trim(),
+            celular:     addr.celular.trim(),
+            ciudad:      ciudad.trim() || undefined,
+            costo_envio: tarifaEnvio,
+          },
           { headers: { Authorization: `Bearer ${token}` } }
         );
         const pedidoId = pedidoRes.data?.id;
@@ -353,7 +516,9 @@ function MetodoPagoModal({ items, subtotal, token, isGuest, onClose, onSuccess }
         window.location.href = wompiUrl;
       }
     } catch (err) {
-      setError(err.response?.data?.detail || err.response?.data?.message || 'Error al procesar el pago.');
+      const detail = err.response?.data?.detail;
+      const errorMsg = Array.isArray(detail) ? detail.map(e => e.msg).join(', ') : (typeof detail === 'string' ? detail : (err.response?.data?.message || 'Error al procesar el pago.'));
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -389,8 +554,8 @@ function MetodoPagoModal({ items, subtotal, token, isGuest, onClose, onSuccess }
     separar: 'Separar y pagar en tienda',
   };
 
-  // For guest, "separar" also needs a form (to collect contact info)
-  const needsForm = step !== 'select' && (step === 'wompi' || (step === 'separar' && isGuest));
+  // All methods collect address + city — always show form
+  const needsForm = step !== 'select';
 
   return (
     <div
@@ -438,35 +603,22 @@ function MetodoPagoModal({ items, subtotal, token, isGuest, onClose, onSuccess }
           ) : step === 'select' ? (
             /* ── Method selection ── */
             <>
-              <p className="text-white/40 text-xs tracking-wide">
-                Total a pagar: <span className="text-white font-bold">{fmtCOP(subtotal)}</span>
-              </p>
-              {METHODS.map(({ key, title, desc, icon }) => {
-                const isDirectAction = key === 'separar' && !isGuest;
-                return (
-                  <button key={key}
-                    onClick={() => {
-                      setError(null);
-                      if (isDirectAction) { handleSeparar(); }
-                      else { setStep(key); }
-                    }}
-                    disabled={loading}
-                    className="flex items-start gap-4 p-4 border border-white/10 hover:border-white/30 hover:bg-white/[0.02] text-left transition-colors disabled:opacity-50 group">
-                    <span className="text-white/40 group-hover:text-white/70 transition-colors mt-0.5 shrink-0">{icon}</span>
-                    <div className="flex-1">
-                      <p className="text-white text-sm font-bold tracking-wide mb-1">{title}</p>
-                      <p className="text-white/40 text-xs tracking-wide leading-relaxed">{desc}</p>
-                    </div>
-                    {loading && isDirectAction ? (
-                      <span className="text-white/40 mt-1 shrink-0"><Spinner /></span>
-                    ) : (
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white/20 group-hover:text-white/50 transition-colors mt-1 shrink-0">
-                        <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
-                      </svg>
-                    )}
-                  </button>
-                );
-              })}
+              <EnvioBreakdown subtotal={subtotal} tarifaEnvio={tarifaEnvio} ciudad={ciudad} />
+              {METHODS.map(({ key, title, desc, icon }) => (
+                <button key={key}
+                  onClick={() => { setError(null); setCiudadError(null); setStep(key); }}
+                  disabled={loading}
+                  className="flex items-start gap-4 p-4 border border-white/10 hover:border-white/30 hover:bg-white/[0.02] text-left transition-colors disabled:opacity-50 group">
+                  <span className="text-white/40 group-hover:text-white/70 transition-colors mt-0.5 shrink-0">{icon}</span>
+                  <div className="flex-1">
+                    <p className="text-white text-sm font-bold tracking-wide mb-1">{title}</p>
+                    <p className="text-white/40 text-xs tracking-wide leading-relaxed">{desc}</p>
+                  </div>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white/20 group-hover:text-white/50 transition-colors mt-1 shrink-0">
+                    <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
+                  </svg>
+                </button>
+              ))}
               {error && (
                 <div className="px-4 py-3 text-xs border"
                   style={{ color: '#f87171', borderColor: 'rgba(248,113,113,0.25)', background: 'rgba(248,113,113,0.07)' }}>
@@ -476,12 +628,58 @@ function MetodoPagoModal({ items, subtotal, token, isGuest, onClose, onSuccess }
             </>
 
           ) : needsForm ? (
-            /* ── Address / contact form ── */
             <>
-              <p className="text-white/40 text-xs tracking-wide">
-                Total: <span className="text-white font-bold">{fmtCOP(subtotal)}</span>
-              </p>
-              <AddressForm fields={addr} onChange={setField} isGuest={isGuest} />
+              {step === 'separar' ? (
+                /* ── Separar: contact info only ── */
+                <div className="flex flex-col gap-3">
+                  {(['nombre','email','celular']).map((key) => (
+                    <div key={key}>
+                      <label className="block text-white/30 text-[10px] tracking-[0.25em] uppercase mb-1.5">
+                        {key === 'nombre' ? 'Nombre completo *' : key === 'email' ? 'Email *' : 'Celular *'}
+                      </label>
+                      <input
+                        type={key === 'email' ? 'email' : key === 'celular' ? 'tel' : 'text'}
+                        value={addr[key]}
+                        onChange={(e) => setField(key, e.target.value)}
+                        placeholder={key === 'nombre' ? 'Juan Pérez' : key === 'email' ? 'juan@ejemplo.com' : '300 123 4567'}
+                        className="w-full bg-[#111] border border-white/15 text-white text-sm px-4 py-2.5 placeholder:text-white/20 focus:outline-none focus:border-white/40 transition-colors tracking-wide"
+                      />
+                      {key === 'email' && (
+                        <p className="text-white/25 text-[9px] mt-1">Te enviaremos la confirmación de tu reserva</p>
+                      )}
+                    </div>
+                  ))}
+                  {/* 48h notice */}
+                  <div className="flex gap-3 px-4 py-3 mt-1 border"
+                    style={{ borderColor: 'rgba(251,146,60,0.25)', background: 'rgba(251,146,60,0.06)' }}>
+                    <span style={{ color: 'rgba(251,146,60,0.8)' }} className="shrink-0 mt-0.5">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                        <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+                      </svg>
+                    </span>
+                    <p className="text-[11px] leading-relaxed" style={{ color: 'rgba(251,146,60,0.75)' }}>
+                      Tu pedido quedará separado por <strong>48 horas</strong>. Debes acercarte a nuestra tienda física y realizar el pago antes de que expire la reserva. Recibirás un correo de confirmación.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                /* ── Wompi: full address + shipping ── */
+                <>
+                  <EnvioBreakdown subtotal={subtotal} tarifaEnvio={tarifaEnvio} ciudad={ciudad} />
+                  <AddressForm
+                    fields={addr}
+                    onChange={setField}
+                    isGuest={isGuest}
+                    showEnvio={true}
+                    ciudad={ciudad}
+                    onCiudadChange={onCiudadChange}
+                    tarifaEnvio={tarifaEnvio}
+                    infoEnvio={infoEnvio}
+                    onEnvioFound={onEnvioFound}
+                    ciudadError={ciudadError}
+                  />
+                </>
+              )}
               {error && (
                 <div className="px-4 py-3 text-xs border"
                   style={{ color: '#f87171', borderColor: 'rgba(248,113,113,0.25)', background: 'rgba(248,113,113,0.07)' }}>
@@ -518,20 +716,28 @@ export default function CarritoPage() {
   const { usuario, token } = useAuth();
 
   const [mounted,      setMounted]      = useState(false);
-  const [authChoice,   setAuthChoice]   = useState(false);  // show auth choice modal
+  const [authChoice,   setAuthChoice]   = useState(false);
   const [pagoModal,    setPagoModal]    = useState(false);
   const [isGuest,      setIsGuest]      = useState(false);
 
+  // Shipping state — lifted so sidebar and modal stay in sync
+  const [ciudad,      setCiudad]      = useState('');
+  const [tarifaEnvio, setTarifaEnvio] = useState(0);
+  const [infoEnvio,   setInfoEnvio]   = useState(null);
+
   useEffect(() => setMounted(true), []);
+
+  const handleEnvioFound = (tarifa, info) => {
+    setTarifaEnvio(tarifa);
+    setInfoEnvio(info);
+  };
 
   const handleCheckout = () => {
     if (!mounted || items.length === 0) return;
     if (token && usuario) {
-      // Already logged in → go straight to payment
       setIsGuest(false);
       setPagoModal(true);
     } else {
-      // Not logged in → show auth choice
       setAuthChoice(true);
     }
   };
@@ -567,6 +773,11 @@ export default function CarritoPage() {
           subtotal={subtotal}
           token={token}
           isGuest={isGuest}
+          ciudad={ciudad}
+          onCiudadChange={setCiudad}
+          tarifaEnvio={tarifaEnvio}
+          infoEnvio={infoEnvio}
+          onEnvioFound={handleEnvioFound}
           onClose={() => setPagoModal(false)}
           onSuccess={handlePaymentSuccess}
         />
@@ -618,7 +829,12 @@ export default function CarritoPage() {
 
                 {/* Summary */}
                 <div>
-                  <OrderSummary subtotal={subtotal} onCheckout={handleCheckout} />
+                  <OrderSummary
+                    subtotal={subtotal}
+                    tarifaEnvio={tarifaEnvio}
+                    ciudad={ciudad}
+                    onCheckout={handleCheckout}
+                  />
                 </div>
               </div>
             )}

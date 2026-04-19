@@ -262,17 +262,7 @@ function PedidoCard({ pedido, token, onPagoConfirmado }) {
                   </svg>
                   Contactar por WhatsApp
                 </a>
-                <button
-                  onClick={() => setShowConfirm(true)}
-                  className="flex items-center gap-2 text-[10px] tracking-[0.15em] uppercase border px-3 py-1.5 transition-colors hover:bg-purple-500/10"
-                  style={{ color: '#c084fc', borderColor: 'rgba(192,132,252,0.3)' }}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                    <polyline points="22 4 12 14.01 9 11.01" />
-                  </svg>
-                  Confirmar pago
-                </button>
+
               </div>
             </div>
           )}

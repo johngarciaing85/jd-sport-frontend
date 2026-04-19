@@ -47,7 +47,7 @@ export default function WhatsappFloat() {
   }, []);
 
   return (
-    <div ref={wrapRef} className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
+    <div ref={wrapRef} className="fixed bottom-20 right-6 z-40 flex flex-col items-end gap-3">
 
       {/* ── Popup ── */}
       <div

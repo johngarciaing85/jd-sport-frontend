@@ -22,6 +22,10 @@ function WhatsAppIcon({ size = 28 }) {
 }
 
 export default function WhatsappFloat() {
+  // No mostrar en páginas de admin
+  if (typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')) {
+    return null;
+  }
   const [open, setOpen]   = useState(false);
   const wrapRef           = useRef(null);
 

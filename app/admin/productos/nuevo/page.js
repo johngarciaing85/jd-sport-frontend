@@ -1,4 +1,5 @@
 'use client';
+import { API_URL } from '@/lib/api';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -74,7 +75,7 @@ export default function NuevoProducto() {
       payload.stock  = Number(payload.stock)  || 0;
       if (payload.precio_oferta !== undefined) payload.precio_oferta = Number(payload.precio_oferta) || 0;
 
-      const res = await axios.post('http://localhost:8000/api/productos/', payload, {
+      const res = await axios.post(`${API_URL}/productos/`, payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -83,7 +84,7 @@ export default function NuevoProducto() {
       // Save tallas stock
       if (id && tallasStock.length > 0) {
         await axios.post(
-          `http://localhost:8000/api/productos/${id}/tallas`,
+          `${API_URL}/productos/${id}/tallas`,
           { tallas: tallasStock },
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -92,7 +93,7 @@ export default function NuevoProducto() {
       if (imageFile && id) {
         const form = new FormData();
         form.append('imagen', imageFile);
-        await axios.post(`http://localhost:8000/api/productos/${id}/imagen`, form, {
+        await axios.post(`${API_URL}/productos/${id}/imagen`, form, {
           headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' },
         });
       }

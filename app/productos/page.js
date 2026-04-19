@@ -1,5 +1,7 @@
 'use client';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { API_URL } from '@/lib/api';
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import axios from 'axios';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -39,7 +41,8 @@ function ProductSkeleton() {
   );
 }
 
-export default function ProductosPage() {
+function ProductosContent() {
+  const searchParams = useSearchParams();
   const [productos,  setProductos]  = useState([]);
   const [loading,    setLoading]    = useState(true);
   const [error,      setError]      = useState(null);
@@ -49,15 +52,23 @@ export default function ProductosPage() {
   const [categorias, setCategorias] = useState([]);
   const searchRef = useRef(null);
 
-  // Read ?q= from URL on mount
+  // Read ?q= and ?genero= from URL on mount AND on navigation changes
   useEffect(() => {
-    const q = new URLSearchParams(window.location.search).get('q');
+    const q = searchParams.get('q');
     if (q) setBusqueda(q);
-  }, []);
+    const g = searchParams.get('genero');
+    if (g) {
+      const normalized = g.toLowerCase();
+      if (normalized === 'mujer' || normalized === 'dama') setGenero('mujer');
+      else if (normalized === 'hombre' || normalized === 'caballero') setGenero('hombre');
+    } else {
+      setGenero('');
+    }
+  }, [searchParams]);
 
   // Fetch categories once on mount
   useEffect(() => {
-    axios.get('http://localhost:8000/api/categorias/')
+    axios.get(`${API_URL}/categorias/`)
       .then((res) => {
         const list = res.data?.items ?? res.data?.results ?? (Array.isArray(res.data) ? res.data : []);
         setCategorias(list);
@@ -75,7 +86,7 @@ export default function ProductosPage() {
     if (busqueda.trim()) params.q         = busqueda.trim();
 
     axios
-      .get('http://localhost:8000/api/productos/', { params })
+      .get(`${API_URL}/productos/`, { params })
       .then((res) => {
         const list = res.data?.items ?? res.data?.results ?? (Array.isArray(res.data) ? res.data : []);
         setProductos(list);
@@ -229,5 +240,22 @@ export default function ProductosPage() {
 
       <Footer />
     </div>
+  );
+}
+
+export default function ProductosPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex flex-col min-h-screen bg-black">
+        <Navbar />
+        <main className="flex-1 pt-16">
+          <div className="max-w-7xl mx-auto px-6 py-12 text-center">
+            <p className="text-white/30 text-sm">Cargando productos...</p>
+          </div>
+        </main>
+      </div>
+    }>
+      <ProductosContent />
+    </Suspense>
   );
 }

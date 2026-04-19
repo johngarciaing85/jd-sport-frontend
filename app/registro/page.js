@@ -1,4 +1,5 @@
 'use client';
+import { API_URL } from '@/lib/api';
 import { useState } from 'react';
 import Link from 'next/link';
 import axios from 'axios';
@@ -35,6 +36,7 @@ export default function RegistroPage() {
     nombre: '',
     apellido: '',
     email: '',
+    celular: '',
     password: '',
     confirmar: '',
     genero: '',
@@ -79,10 +81,11 @@ export default function RegistroPage() {
       email: form.email,
       password: form.password,
       genero: form.genero || undefined,
+      telefono: form.celular || undefined,
     };
 
     try {
-      await axios.post('http://localhost:8000/api/usuarios/registro', payload);
+      await axios.post(`${API_URL}/usuarios/registro`, payload);
       setSuccess(true);
     } catch (err) {
       const detail = err.response?.data?.detail;
@@ -198,6 +201,22 @@ export default function RegistroPage() {
                 onChange={handleChange}
                 autoComplete="email"
                 placeholder="tu@correo.com"
+                className="w-full bg-[#111] border border-white/15 text-white text-sm px-4 py-3.5 placeholder:text-white/20 focus:outline-none focus:border-white/50 transition-colors"
+              />
+            </div>
+
+            {/* Celular */}
+            <div>
+              <label className="block text-white/40 text-[10px] tracking-[0.3em] uppercase mb-2">
+                Número de celular
+              </label>
+              <input
+                type="tel"
+                name="celular"
+                value={form.celular}
+                onChange={handleChange}
+                autoComplete="tel"
+                placeholder="300 123 4567"
                 className="w-full bg-[#111] border border-white/15 text-white text-sm px-4 py-3.5 placeholder:text-white/20 focus:outline-none focus:border-white/50 transition-colors"
               />
             </div>

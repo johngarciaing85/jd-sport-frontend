@@ -1,4 +1,5 @@
 'use client';
+import { API_URL } from '@/lib/api';
 import { useState } from 'react';
 import Link from 'next/link';
 import axios from 'axios';
@@ -17,7 +18,7 @@ export default function RecuperarPasswordPage() {
     setLoading(true);
     setError(null);
     try {
-      await axios.post('http://localhost:8000/api/auth/solicitar-reset', { email: email.trim() });
+      await axios.post(`${API_URL}/auth/solicitar-reset`, { email: email.trim() });
       setSent(true);
     } catch {
       // Always show success message to avoid email enumeration

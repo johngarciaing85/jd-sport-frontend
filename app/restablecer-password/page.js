@@ -1,4 +1,5 @@
 'use client';
+import { API_URL } from '@/lib/api';
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -43,7 +44,7 @@ export default function RestablecerPasswordPage() {
     setLoading(true);
     setError(null);
     try {
-      await axios.post('http://localhost:8000/api/auth/reset-password', {
+      await axios.post(`${API_URL}/auth/reset-password`, {
         token,
         nueva_password: form.nueva_password,
       });

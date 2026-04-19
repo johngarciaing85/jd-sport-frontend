@@ -1,4 +1,5 @@
 'use client';
+import { API_URL } from '@/lib/api';
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
@@ -87,7 +88,7 @@ export default function EditarProducto() {
     if (!isAdmin(usuario)) { router.replace('/');     return; }
 
     axios
-      .get(`http://localhost:8000/api/productos/${id}`, {
+      .get(`${API_URL}/productos/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
@@ -133,7 +134,7 @@ export default function EditarProducto() {
 
       console.log('[Editar] payload →', payload);
 
-      const res = await axios.put(`http://localhost:8000/api/productos/${id}`, payload, {
+      const res = await axios.put(`${API_URL}/productos/${id}`, payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
       console.log('[Editar] PUT response →', res.status, res.data);
@@ -141,7 +142,7 @@ export default function EditarProducto() {
       // Always sync tallas stock (empty array clears nothing, upserts when provided)
       if (tallasStock.length > 0) {
         await axios.post(
-          `http://localhost:8000/api/productos/${id}/tallas`,
+          `${API_URL}/productos/${id}/tallas`,
           { tallas: tallasStock },
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -150,7 +151,7 @@ export default function EditarProducto() {
       if (imageFile) {
         const form = new FormData();
         form.append('imagen', imageFile);
-        await axios.post(`http://localhost:8000/api/productos/${id}/imagen`, form, {
+        await axios.post(`${API_URL}/productos/${id}/imagen`, form, {
           headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' },
         });
       }

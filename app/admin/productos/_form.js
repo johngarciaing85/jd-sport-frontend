@@ -1,4 +1,5 @@
 'use client';
+import { API_URL } from '@/lib/api';
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 
@@ -174,7 +175,7 @@ function GaleriaImagenes({ productoId, initialImagenes = [], token }) {
       const form = new FormData();
       files.forEach((f) => form.append('imagenes', f));
       const res = await axios.post(
-        `http://localhost:8000/api/productos/${productoId}/imagenes`,
+        `${API_URL}/productos/${productoId}/imagenes`,
         form,
         { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' } }
       );
@@ -193,7 +194,7 @@ function GaleriaImagenes({ productoId, initialImagenes = [], token }) {
   const handleDelete = async (img) => {
     try {
       await axios.delete(
-        `http://localhost:8000/api/productos/${productoId}/imagenes/${img.id}`,
+        `${API_URL}/productos/${productoId}/imagenes/${img.id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setImagenes((prev) => prev.filter((i) => i.id !== img.id));
@@ -303,7 +304,7 @@ export default function ProductoForm({
   useEffect(() => {
     if (!token) return;
     axios
-      .get('http://localhost:8000/api/categorias/', {
+      .get(`${API_URL}/categorias/`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {

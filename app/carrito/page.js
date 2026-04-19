@@ -1,4 +1,5 @@
 'use client';
+import { API_URL } from '@/lib/api';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -226,7 +227,7 @@ function AddressForm({ fields, onChange, isGuest, showEnvio = true, ciudad, onCi
     if (!value) { onEnvioFound(0, null); return; }
     setFetching(true);
     try {
-      const res = await axios.post('http://localhost:8000/api/envios/calcular', { ciudad: value });
+      const res = await axios.post(`${API_URL}/envios/calcular`, { ciudad: value });
       onEnvioFound(res.data.tarifa ?? 0, res.data);
     } catch {
       onEnvioFound(0, null);
@@ -435,7 +436,7 @@ function MetodoPagoModal({ items, subtotal, token, isGuest, ciudad, onCiudadChan
           metodo_pago: 'tienda',
         };
         console.log('[SEPARAR] guest payload:', guestPayload);
-        const res = await axios.post('http://localhost:8000/api/pedidos/invitado', guestPayload);
+        const res = await axios.post(`${API_URL}/pedidos/invitado`, guestPayload);
         const pedidoId = res.data?.id ? ` #${res.data.id}` : '';
         setSuccess(`¡Reserva confirmada! Tu pedido${pedidoId} está separado por 48 horas. Revisa tu correo para los detalles.`);
       } else {
@@ -445,7 +446,7 @@ function MetodoPagoModal({ items, subtotal, token, isGuest, ciudad, onCiudadChan
         };
         console.log('[SEPARAR] auth payload:', authPayload);
         const res = await axios.post(
-          'http://localhost:8000/api/pedidos/separar',
+          `${API_URL}/pedidos/separar`,
           authPayload,
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -469,7 +470,7 @@ function MetodoPagoModal({ items, subtotal, token, isGuest, ciudad, onCiudadChan
     setError(null);
     try {
       if (isGuest) {
-        const res = await axios.post('http://localhost:8000/api/pedidos/invitado', {
+        const res = await axios.post(`${API_URL}/pedidos/invitado`, {
           items:           pedidoItems,
           nombre:          addr.nombre.trim(),
           email:           addr.email.trim(),
@@ -489,7 +490,7 @@ function MetodoPagoModal({ items, subtotal, token, isGuest, ciudad, onCiudadChan
         window.location.href = wompiUrl;
       } else {
         const pedidoRes = await axios.post(
-          'http://localhost:8000/api/pedidos/',
+          `${API_URL}/pedidos/`,
           {
             items:       pedidoItems,
             direccion:   addr.direccion.trim(),
@@ -502,7 +503,7 @@ function MetodoPagoModal({ items, subtotal, token, isGuest, ciudad, onCiudadChan
         );
         const pedidoId = pedidoRes.data?.id;
         const pagoRes = await axios.post(
-          `http://localhost:8000/api/pagos/iniciar/${pedidoId}`,
+          `${API_URL}/pagos/iniciar/${pedidoId}`,
           {},
           { headers: { Authorization: `Bearer ${token}` } }
         );

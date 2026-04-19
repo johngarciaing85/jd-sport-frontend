@@ -1,4 +1,6 @@
 'use client';
+// Ruta: app/admin/pedidos/page.js
+import { API_URL } from '@/lib/api';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -144,7 +146,7 @@ function CambiarEstadoModal({ pedido, token, onClose, onSuccess }) {
     setError(null);
     try {
       const res = await axios.put(
-        `http://localhost:8000/api/pedidos/admin/${pedido.id}/estado`,
+        `${API_URL}/pedidos/admin/${pedido.id}/estado`,
         { estado },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -281,6 +283,82 @@ function ConfirmarFacturaModal({ pedido, token, onClose, onConfirm, sending }) {
               </svg>
             ) : null}
             Sí, enviar factura
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Confirmar pago modal ───────────────────────────────────────────────── */
+function ConfirmarPagoModal({ pedido, onClose, onConfirm, loading: saving }) {
+  const clienteNombre = pedido.usuario?.nombre ?? pedido.cliente_nombre ?? pedido.cliente?.nombre ?? pedido.cliente?.email ?? pedido.cliente ?? (pedido.usuario_id ? `Usuario #${pedido.usuario_id}` : '—');
+
+  useEffect(() => {
+    const h = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.88)' }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="bg-[#0d0d0d] border border-white/15 w-full max-w-sm flex flex-col">
+
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+          <div>
+            <p className="text-white/30 text-[10px] tracking-[0.35em] uppercase">Confirmar pago</p>
+            <p className="text-white text-sm font-bold tracking-wide mt-0.5">
+              ¿Confirmar pago del pedido?
+            </p>
+          </div>
+          <button onClick={onClose} className="text-white/30 hover:text-white transition-colors p-1">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="px-6 py-5 flex flex-col gap-3 border-b border-white/[0.06]">
+          {[
+            ['Pedido',  `#${pedido.numero_pedido ?? pedido.id}`],
+            ['Cliente', clienteNombre],
+            ['Total',   pedido.total ? COP.format(Number(pedido.total)) : '—'],
+          ].map(([label, val]) => (
+            <div key={label} className="flex items-center justify-between">
+              <p className="text-white/30 text-[10px] tracking-[0.25em] uppercase">{label}</p>
+              <p className="text-white text-sm font-medium tracking-wide">{val}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="px-6 py-4">
+          <div className="flex items-start gap-3 p-3 border border-yellow-500/20 bg-yellow-500/5">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#facc15" strokeWidth="1.5" className="shrink-0 mt-0.5">
+              <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+              <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+            <p className="text-yellow-400/80 text-[11px] leading-relaxed">
+              Esta acción marcará el pedido como pagado. Asegúrate de haber recibido el pago antes de confirmar.
+            </p>
+          </div>
+        </div>
+
+        <div className="px-6 pb-6 flex gap-3">
+          <button onClick={onClose} disabled={saving}
+            className="flex-1 text-white/40 hover:text-white text-[10px] tracking-[0.25em] uppercase border border-white/10 hover:border-white/30 py-3 transition-colors disabled:opacity-40">
+            Cancelar
+          </button>
+          <button onClick={onConfirm} disabled={saving}
+            className="flex-1 flex items-center justify-center gap-2 bg-white text-black text-[10px] font-bold tracking-[0.25em] uppercase py-3 hover:bg-white/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+            {saving ? (
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="animate-spin">
+                <polyline points="23 4 23 10 17 10" /><polyline points="1 20 1 14 7 14" />
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+              </svg>
+            ) : null}
+            Sí, confirmar pago
           </button>
         </div>
       </div>
@@ -440,10 +518,11 @@ export default function AdminPedidos() {
   const [loading,  setLoading]  = useState(true);
   const [error,    setError]    = useState(null);
   const [filter,   setFilter]   = useState('todos');
-  const [modal,         setModal]         = useState(null);  // pedido for estado modal
-  const [facturaModal,  setFacturaModal]  = useState(null);  // pedido for factura confirm
-  const [detalleModal,  setDetalleModal]  = useState(null);  // pedido for detail view
-  const [loadKey,       setLoadKey]       = useState(null);  // "${id}_confirmar"
+  const [modal,              setModal]              = useState(null);  // pedido for estado modal
+  const [facturaModal,       setFacturaModal]       = useState(null);  // pedido for factura confirm
+  const [detalleModal,       setDetalleModal]       = useState(null);  // pedido for detail view
+  const [confirmarPagoModal, setConfirmarPagoModal] = useState(null);  // pedido for pago confirm
+  const [loadKey,            setLoadKey]            = useState(null);  // "${id}_confirmar"
   const [sendingFactura,setSendingFactura]= useState(false);
   const [feedback,      setFeedback]      = useState(null);  // { type:'ok'|'err', msg }
   const [search,        setSearch]        = useState('');
@@ -455,7 +534,7 @@ export default function AdminPedidos() {
     if (!token) return;
     setLoading(true);
     setError(null);
-    axios.get('http://localhost:8000/api/pedidos/admin/todos', {
+    axios.get(`${API_URL}/pedidos/admin/todos`, {
       params: { pagina: 1, tamano: 100 },
       headers: { Authorization: `Bearer ${token}` },
     })
@@ -483,11 +562,12 @@ export default function AdminPedidos() {
   };
 
   const handleConfirmarPago = async (pedido) => {
+    if (!window.confirm(`¿Estás seguro de confirmar el pago del pedido #${pedido.numero_pedido ?? pedido.id} por ${pedido.total ? COP.format(Number(pedido.total)) : '—'}?`)) return;
     const key = `${pedido.id}_confirmar`;
     setLoadKey(key);
     try {
       await axios.post(
-        `http://localhost:8000/api/pedidos/admin/${pedido.id}/confirmar-pago-tienda`,
+        `${API_URL}/pedidos/admin/${pedido.id}/confirmar-pago-tienda`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -506,7 +586,7 @@ export default function AdminPedidos() {
     setSendingFactura(true);
     try {
       await axios.post(
-        `http://localhost:8000/api/pagos/${pedido.id}/enviar-factura`,
+        `${API_URL}/pagos/${pedido.id}/enviar-factura`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -522,6 +602,28 @@ export default function AdminPedidos() {
 
   const handleEstadoSuccess = (id, nuevoEstado) => {
     setPedidos((prev) => prev.map((p) => p.id === id ? { ...p, estado: nuevoEstado } : p));
+  };
+
+  /* Fix 3: Admin can cancel a reservation — stock is restored on backend */
+  const handleCancelarReserva = async (pedido) => {
+    if (!window.confirm(`¿Estás seguro de cancelar la reserva del pedido #${pedido.numero_pedido ?? pedido.id}?\n\nEl stock se restaurará automáticamente y se notificará al cliente.`)) return;
+    const key = `${pedido.id}_cancelar`;
+    setLoadKey(key);
+    try {
+      await axios.post(
+        `${API_URL}/pedidos/admin/${pedido.id}/cancelar-reserva`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setPedidos((prev) => prev.map((p) => p.id === pedido.id ? { ...p, estado: 'cancelado' } : p));
+      showFeedback('ok', `Reserva cancelada para pedido #${pedido.numero_pedido ?? pedido.id}. Stock restaurado.`);
+    } catch (err) {
+      const detail = err.response?.data?.detail;
+      const errorMsg = Array.isArray(detail) ? detail.map(e => e.msg).join(', ') : (typeof detail === 'string' ? detail : 'Error al cancelar la reserva.');
+      showFeedback('err', errorMsg);
+    } finally {
+      setLoadKey(null);
+    }
   };
 
   const filtered = pedidos.filter((p) => {
@@ -778,6 +880,15 @@ export default function AdminPedidos() {
                                     style={{ color: '#c084fc', borderColor: 'rgba(192,132,252,0.25)' }}
                                   >
                                     Confirmar pago
+                                  </ActionBtn>
+                                )}
+                                {estado === 'separado' && (
+                                  <ActionBtn
+                                    loading={loadKey === `${p.id}_cancelar`}
+                                    onClick={() => handleCancelarReserva(p)}
+                                    style={{ color: '#f87171', borderColor: 'rgba(248,113,113,0.25)' }}
+                                  >
+                                    Cancelar reserva
                                   </ActionBtn>
                                 )}
                                 <ActionBtn loading={false} onClick={() => setModal(p)}>

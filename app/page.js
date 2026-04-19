@@ -1,4 +1,5 @@
 'use client';
+import { API_URL } from '@/lib/api';
 import { useState, useEffect } from 'react';
 
 let splashHasPlayed = false;
@@ -107,7 +108,7 @@ function FeaturedProducts() {
 
   useEffect(() => {
     axios
-      .get('http://localhost:8000/api/productos/destacados')
+      .get(`${API_URL}/productos/destacados`)
       .then((res) => setProductos(res.data))
       .catch(() => setError('No se pudieron cargar los productos destacados.'))
       .finally(() => setLoading(false));

@@ -1,4 +1,5 @@
 'use client';
+import { API_URL } from '@/lib/api';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -62,14 +63,14 @@ function CategoriaModal({ categoria, token, onClose, onSuccess }) {
       let result;
       if (isEdit) {
         const res = await axios.put(
-          `http://localhost:8000/api/categorias/${categoria.id}`,
+          `${API_URL}/categorias/${categoria.id}`,
           { nombre: nombre.trim(), descripcion: descripcion.trim() },
           { headers: { Authorization: `Bearer ${token}` } }
         );
         result = res.data;
       } else {
         const res = await axios.post(
-          'http://localhost:8000/api/categorias/',
+          `${API_URL}/categorias/`,
           { nombre: nombre.trim(), descripcion: descripcion.trim() },
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -193,7 +194,7 @@ function EliminarModal({ categoria, token, onClose, onSuccess }) {
     setError(null);
     try {
       await axios.delete(
-        `http://localhost:8000/api/categorias/${categoria.id}`,
+        `${API_URL}/categorias/${categoria.id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       onSuccess(categoria.id);
@@ -288,7 +289,7 @@ export default function AdminCategorias() {
     setLoading(true);
     setError(null);
     axios
-      .get('http://localhost:8000/api/categorias/', {
+      .get(`${API_URL}/categorias/`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {

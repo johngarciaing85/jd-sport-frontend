@@ -1,4 +1,5 @@
 'use client';
+import { API_URL } from '@/lib/api';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -76,7 +77,7 @@ function ResolverModal({ solicitud, token, onClose, onSuccess }) {
     setError(null);
     try {
       const res = await axios.put(
-        `http://localhost:8000/api/solicitudes/admin/${solicitud.id}/resolver`,
+        `${API_URL}/solicitudes/admin/${solicitud.id}/resolver`,
         { estado, notas_admin: notas },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -271,7 +272,7 @@ export default function AdminSolicitudes() {
     setLoading(true);
     setError(null);
     axios
-      .get('http://localhost:8000/api/solicitudes/admin/', {
+      .get(`${API_URL}/solicitudes/admin/`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {

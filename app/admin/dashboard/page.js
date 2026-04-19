@@ -1,4 +1,5 @@
 'use client';
+import { API_URL } from '@/lib/api';
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -149,15 +150,24 @@ function LowStockTable({ productos = [] }) {
           {productos.map((p, i) => {
             const stock = Number(p.stock ?? p.cantidad ?? 0);
             const critico = stock <= 2;
+            const inactivo = p.activo === false || p.eliminado === true || p.estado === 'inactivo';
             return (
-              <tr key={p.id ?? i} className="border-b border-white/[0.06] hover:bg-white/[0.02] transition-colors">
+              <tr key={p.id ?? i} className={`border-b border-white/[0.06] hover:bg-white/[0.02] transition-colors ${inactivo ? 'opacity-50' : ''}`}>
                 <td className="py-3 pr-4">
-                  <Link
-                    href={`/productos/${p.id}`}
-                    className="text-white text-sm hover:text-white/70 transition-colors tracking-wide"
-                  >
-                    {p.nombre}
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={`/productos/${p.id}`}
+                      className="text-white text-sm hover:text-white/70 transition-colors tracking-wide"
+                    >
+                      {p.nombre}
+                    </Link>
+                    {inactivo && (
+                      <span className="text-[9px] tracking-[0.15em] uppercase border px-1.5 py-0.5 shrink-0"
+                        style={{ color: '#9ca3af', borderColor: 'rgba(156,163,175,0.3)', background: 'rgba(156,163,175,0.08)' }}>
+                        Inactivo
+                      </span>
+                    )}
+                  </div>
                 </td>
                 <td className="py-3 pr-4 text-white/40 text-xs">
                   {p.categoria?.nombre ?? p.categoria ?? '—'}
@@ -227,7 +237,7 @@ function SalesCharts({ token }) {
   useEffect(() => {
     if (!token) return;
     axios
-      .get('http://localhost:8000/api/admin/reportes/ventas', {
+      .get(`${API_URL}/admin/reportes/ventas`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
@@ -445,7 +455,7 @@ export default function AdminDashboard() {
     setLoading(true);
     setError(null);
     axios
-      .get('http://localhost:8000/api/admin/dashboard', {
+      .get(`${API_URL}/admin/dashboard`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
@@ -472,7 +482,13 @@ export default function AdminDashboard() {
   if (!mounted) return null;
 
   const estadosPedidos = data?.pedidos_por_estado ?? {};
-  const bajoStock      = data?.productos_bajo_stock ?? [];
+  const rawBajoStock   = data?.productos_bajo_stock ?? [];
+  // Fix 2: Filter out deleted/inactive products for regular admins
+  // Superadmin sees inactive products (marked as such), regular admin doesn't see them
+  const isSuperAdmin = usuario?.rol === 'superadmin' || usuario?.role === 'superadmin' || usuario?.is_superuser === true;
+  const bajoStock = isSuperAdmin
+    ? rawBajoStock
+    : rawBajoStock.filter((p) => p.activo !== false && p.eliminado !== true && p.estado !== 'inactivo');
   const solicitudes    = Number(data?.solicitudes_pendientes ?? 0);
   const pedidosActivos = Number(data?.pedidos_activos ?? 0);
 

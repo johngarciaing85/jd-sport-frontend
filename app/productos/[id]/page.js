@@ -1,4 +1,5 @@
 'use client';
+import { API_URL } from '@/lib/api';
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -212,7 +213,7 @@ function Resenas({ productoId }) {
     setLoading(true);
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
     axios
-      .get(`http://localhost:8000/api/productos/${productoId}/resenas`, { headers })
+      .get(`${API_URL}/productos/${productoId}/resenas`, { headers })
       .then((r) => setData(r.data))
       .catch(() => setData(null))
       .finally(() => setLoading(false));
@@ -226,7 +227,7 @@ function Resenas({ productoId }) {
     setError(null);
     try {
       await axios.post(
-        `http://localhost:8000/api/productos/${productoId}/resenas`,
+        `${API_URL}/productos/${productoId}/resenas`,
         { estrellas, comentario: comentario.trim() || null },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -388,7 +389,7 @@ function RelatedProducts({ categoriaId, categoriaNombre, currentId }) {
   useEffect(() => {
     if (!categoriaId) return;
     axios
-      .get(`http://localhost:8000/api/productos/?categoria_id=${categoriaId}&tamano=4`)
+      .get(`${API_URL}/productos/?categoria_id=${categoriaId}&tamano=4`)
       .then((r) => {
         const items = Array.isArray(r.data) ? r.data : (r.data?.items ?? r.data?.productos ?? []);
         setProducts(items.filter((p) => String(p.id) !== String(currentId)).slice(0, 4));
@@ -441,7 +442,7 @@ export default function ProductoDetalle() {
   useEffect(() => {
     setLoading(true);
     axios
-      .get(`http://localhost:8000/api/productos/${id}/`)
+      .get(`${API_URL}/productos/${id}/`)
       .then((res) => setProducto(res.data))
       .catch(() => setError('Producto no encontrado.'))
       .finally(() => setLoading(false));
@@ -450,7 +451,7 @@ export default function ProductoDetalle() {
   // Fetch average rating for the title area (lightweight, no auth needed)
   useEffect(() => {
     axios
-      .get(`http://localhost:8000/api/productos/${id}/resenas`)
+      .get(`${API_URL}/productos/${id}/resenas`)
       .then((r) => setRatingInfo({ promedio: r.data.promedio, total: r.data.total }))
       .catch(() => {});
   }, [id]);

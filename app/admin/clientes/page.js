@@ -1,4 +1,5 @@
 'use client';
+import { API_URL } from '@/lib/api';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -117,7 +118,7 @@ export default function AdminClientes() {
     if (!token) return;
     setLoading(true);
     setError(null);
-    axios.get('http://localhost:8000/api/usuarios/', {
+    axios.get(`${API_URL}/usuarios/`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => {
@@ -147,7 +148,7 @@ export default function AdminClientes() {
     setTogglingId(cliente.id);
     try {
       await axios.put(
-        `http://localhost:8000/api/usuarios/${cliente.id}/desactivar`,
+        `${API_URL}/usuarios/${cliente.id}/desactivar`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );

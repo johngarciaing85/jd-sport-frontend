@@ -1,4 +1,6 @@
 'use client';
+// Ruta: app/admin/productos/page.js
+import { API_URL } from '@/lib/api';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -57,7 +59,7 @@ function UploadModal({ producto, token, onClose, onSuccess }) {
       const form = new FormData();
       form.append('imagen', file);
       const res = await axios.post(
-        `http://localhost:8000/api/productos/${producto.id}/imagen`,
+        `${API_URL}/productos/${producto.id}/imagen`,
         form,
         {
           headers: {
@@ -443,7 +445,7 @@ export default function AdminProductos() {
     setLoading(true);
     setError(null);
     axios
-      .get('http://localhost:8000/api/productos/', {
+      .get(`${API_URL}/productos/`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
@@ -481,7 +483,7 @@ export default function AdminProductos() {
     if (!deleteTarget) return;
     setDeleting(true);
     try {
-      await axios.delete(`http://localhost:8000/api/productos/${deleteTarget.id}`, {
+      await axios.delete(`${API_URL}/productos/${deleteTarget.id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setProductos((prev) => prev.filter((p) => p.id !== deleteTarget.id));

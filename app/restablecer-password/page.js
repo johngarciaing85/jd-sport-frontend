@@ -1,13 +1,13 @@
 'use client';
 import { API_URL } from '@/lib/api';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import axios from 'axios';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
-export default function RestablecerPasswordPage() {
+function RestablecerContent() {
   const router       = useRouter();
   const searchParams = useSearchParams();
   const token        = searchParams.get('token');
@@ -67,8 +67,6 @@ export default function RestablecerPasswordPage() {
       <Navbar />
       <main className="flex-1 flex items-center justify-center px-6 py-24">
         <div className="w-full max-w-sm">
-
-          {/* Header */}
           <div className="mb-10">
             <p className="text-white/30 text-[10px] tracking-[0.4em] uppercase mb-3">Acceso</p>
             <h1
@@ -80,7 +78,6 @@ export default function RestablecerPasswordPage() {
           </div>
 
           {success ? (
-            /* ── Success state ── */
             <div className="flex flex-col gap-6">
               <div className="border border-white/10 bg-[#0a0a0a] px-5 py-6 flex items-start gap-4">
                 <div className="shrink-0 mt-0.5">
@@ -99,18 +96,14 @@ export default function RestablecerPasswordPage() {
                 Ingresar ahora
               </Link>
             </div>
-
           ) : (
-            /* ── Form ── */
             <>
               {error && (
                 <div className="mb-6 border border-red-500/30 bg-red-500/10 px-4 py-3">
                   <p className="text-red-400 text-xs tracking-wide">{error}</p>
                 </div>
               )}
-
               <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
-                {/* Nueva contraseña */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <label className="text-white/40 text-[10px] tracking-[0.3em] uppercase">
@@ -134,8 +127,6 @@ export default function RestablecerPasswordPage() {
                     className="w-full bg-[#111] border border-white/15 text-white text-sm px-4 py-3.5 placeholder:text-white/20 focus:outline-none focus:border-white/50 transition-colors tracking-wide"
                   />
                 </div>
-
-                {/* Confirmar contraseña */}
                 <div>
                   <label className="block text-white/40 text-[10px] tracking-[0.3em] uppercase mb-2">
                     Confirmar contraseña
@@ -150,7 +141,6 @@ export default function RestablecerPasswordPage() {
                     className="w-full bg-[#111] border border-white/15 text-white text-sm px-4 py-3.5 placeholder:text-white/20 focus:outline-none focus:border-white/50 transition-colors tracking-wide"
                   />
                 </div>
-
                 <button
                   type="submit"
                   disabled={loading}
@@ -159,7 +149,6 @@ export default function RestablecerPasswordPage() {
                   {loading ? 'Restableciendo...' : 'Restablecer contraseña'}
                 </button>
               </form>
-
               <p className="text-center mt-8">
                 <Link href="/login" className="text-white/30 hover:text-white/60 text-xs tracking-wide transition-colors">
                   ← Volver a ingresar
@@ -171,5 +160,13 @@ export default function RestablecerPasswordPage() {
       </main>
       <Footer />
     </div>
+  );
+}
+
+export default function RestablecerPasswordPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-black" />}>
+      <RestablecerContent />
+    </Suspense>
   );
 }

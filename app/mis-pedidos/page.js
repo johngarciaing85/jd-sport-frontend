@@ -251,7 +251,7 @@ function PedidoCard({ pedido, token, onPagoConfirmado }) {
                   <span>317 749 9434</span>
                 </div>
                 <a
-                  href={`https://wa.me/573177499434?text=${encodeURIComponent(`Hola JD Sport, quiero confirmar mi pedido #${pedido.numero_pedido ?? pedido.id} que está separado. ¿Cómo puedo completar el pago?`)}`}
+                  href={`https://wa.me/573177499434?text=${encodeURIComponent(`Hola Almacen Sport, quiero confirmar mi pedido #${pedido.numero_pedido ?? pedido.id} que está separado. ¿Cómo puedo completar el pago?`)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 text-[10px] tracking-[0.15em] uppercase border px-3 py-1.5 transition-colors hover:bg-green-500/10"

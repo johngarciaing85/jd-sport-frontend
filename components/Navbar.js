@@ -105,7 +105,7 @@ export default function Navbar() {
         <Link href="/" className="flex items-center gap-2.5 group" style={{ filter: 'drop-shadow(0 0 8px rgba(50,130,255,0.4))' }}>
           <DiamondMini />
           <span className="text-white font-black tracking-[0.15em] text-sm uppercase group-hover:text-white/80 transition-colors">
-            JD Sport
+            Almacen Sport
           </span>
         </Link>
 

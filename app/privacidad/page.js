@@ -48,7 +48,7 @@ export default function PrivacidadPage() {
             }}
           />
           <div className="relative z-10 max-w-3xl mx-auto">
-            <p className="text-white/30 text-xs tracking-[0.4em] uppercase mb-4">JD Sport — Legal</p>
+            <p className="text-white/30 text-xs tracking-[0.4em] uppercase mb-4">Almacen Sport — Legal</p>
             <h1
               className="text-white font-black uppercase leading-none mb-4"
               style={{
@@ -110,7 +110,7 @@ export default function PrivacidadPage() {
               </p>
               <div className="border border-white/10 bg-[#0a0a0a] p-5 flex flex-col gap-2">
                 {[
-                  ['Razón social', 'JD Sport'],
+                  ['Razón social', 'Almacen Sport'],
                   ['Actividad', 'Venta de ropa deportiva y casual'],
                   ['Ciudad', 'Medellín, Antioquia, Colombia'],
                   ['Dirección', 'Medellín, Antioquia, Colombia'],
@@ -127,7 +127,7 @@ export default function PrivacidadPage() {
 
             <Section id="datos" title="2. Datos que recopilamos">
               <p>
-                JD Sport recopila únicamente los datos necesarios para prestar el servicio de venta y entrega de
+                Almacen Sport recopila únicamente los datos necesarios para prestar el servicio de venta y entrega de
                 productos. Los datos que podemos recopilar son:
               </p>
               <ul className="list-none flex flex-col gap-2 pl-4">
@@ -172,7 +172,7 @@ export default function PrivacidadPage() {
                 ))}
               </ul>
               <p>
-                JD Sport <strong className="text-white/75">no enviará comunicaciones de marketing</strong> sin el
+                Almacen Sport <strong className="text-white/75">no enviará comunicaciones de marketing</strong> sin el
                 consentimiento expreso del titular. Si en algún momento desea recibir información sobre novedades y
                 promociones, puede solicitarlo a través de nuestros canales de contacto.
               </p>
@@ -184,7 +184,7 @@ export default function PrivacidadPage() {
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
                 <p className="text-white/60 text-xs tracking-wide leading-relaxed">
-                  <strong className="text-white/80">JD Sport NO vende, alquila ni comparte sus datos personales</strong>{' '}
+                  <strong className="text-white/80">Almacen Sport NO vende, alquila ni comparte sus datos personales</strong>{' '}
                   con terceros con fines comerciales o publicitarios sin su consentimiento expreso.
                 </p>
               </div>
@@ -205,7 +205,7 @@ export default function PrivacidadPage() {
               </ul>
               <p>
                 En todos los casos, exigiremos a los terceros que traten sus datos con la misma seguridad y
-                confidencialidad que JD Sport les otorga.
+                confidencialidad que Almacen Sport les otorga.
               </p>
             </Section>
 
@@ -216,7 +216,7 @@ export default function PrivacidadPage() {
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {[
-                  { titulo: 'Conocer', desc: 'Acceder a los datos personales que JD Sport tiene sobre usted.' },
+                  { titulo: 'Conocer', desc: 'Acceder a los datos personales que Almacen Sport tiene sobre usted.' },
                   { titulo: 'Actualizar', desc: 'Solicitar la corrección de datos inexactos o incompletos.' },
                   { titulo: 'Rectificar', desc: 'Exigir la corrección de información incorrecta.' },
                   { titulo: 'Suprimir', desc: 'Solicitar la eliminación de sus datos cuando no sean necesarios.' },
@@ -261,7 +261,7 @@ export default function PrivacidadPage() {
               </div>
               <p>
                 Su solicitud será atendida en un plazo máximo de <strong className="text-white/75">10 días hábiles</strong>{' '}
-                conforme a lo establecido en la Ley 1581 de 2012. Si la solicitud requiere mayor tiempo, JD Sport le
+                conforme a lo establecido en la Ley 1581 de 2012. Si la solicitud requiere mayor tiempo, Almacen Sport le
                 informará los motivos de la demora.
               </p>
               <p>
@@ -272,7 +272,7 @@ export default function PrivacidadPage() {
 
             <Section id="seguridad" title="7. Seguridad de la información">
               <p>
-                JD Sport implementa medidas técnicas y organizativas razonables para proteger sus datos personales
+                Almacen Sport implementa medidas técnicas y organizativas razonables para proteger sus datos personales
                 contra acceso no autorizado, pérdida, alteración o divulgación.
               </p>
               <ul className="list-none flex flex-col gap-2 pl-4">
@@ -290,7 +290,7 @@ export default function PrivacidadPage() {
               </ul>
               <p>
                 Pese a las medidas implementadas, ningún sistema de seguridad es infalible. En caso de una brecha de
-                seguridad que afecte sus datos, JD Sport le notificará a la brevedad posible.
+                seguridad que afecte sus datos, Almacen Sport le notificará a la brevedad posible.
               </p>
             </Section>
 

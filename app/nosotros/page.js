@@ -34,7 +34,7 @@ function Hero() {
 
       <div className="relative z-10 text-center px-6 max-w-3xl mx-auto">
         <p className="text-white/40 text-xs tracking-[0.4em] uppercase mb-6">
-          JD Sport — Medellin
+          Almacen Sport — Medellin
         </p>
         <h1
           className="text-white font-black uppercase leading-none mb-5"
@@ -74,7 +74,7 @@ function Historia() {
             <div className="w-12 h-px bg-white/20 mb-8" />
             <div className="flex flex-col gap-5 text-white/55 text-sm leading-relaxed">
               <p>
-                JD Sport nació en el corazón de <strong className="text-white/80">Medellin, Antioquia</strong>, con una visión clara: democratizar la moda deportiva y urbana de calidad para todos.
+                Almacen Sport nació en el corazón de <strong className="text-white/80">Medellin, Antioquia</strong>, con una visión clara: democratizar la moda deportiva y urbana de calidad para todos.
               </p>
               <p>
                 Somos una tienda colombiana especializada en ropa deportiva y casual, con las mejores marcas y tendencias para <strong className="text-white/80">dama y caballero</strong>. Nos destacamos por ofrecer prendas premium a precios realmente competitivos.
@@ -290,7 +290,7 @@ function Ubicacion() {
               allowFullScreen=""
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
-              title="Ubicación JD Sport"
+              title="Ubicación Almacen Sport"
             />
           </div>
         </div>

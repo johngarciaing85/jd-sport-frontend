@@ -48,7 +48,7 @@ export default function TerminosPage() {
             }}
           />
           <div className="relative z-10 max-w-3xl mx-auto">
-            <p className="text-white/30 text-xs tracking-[0.4em] uppercase mb-4">JD Sport — Legal</p>
+            <p className="text-white/30 text-xs tracking-[0.4em] uppercase mb-4">Almacen Sport — Legal</p>
             <h1
               className="text-white font-black uppercase leading-none mb-4"
               style={{
@@ -88,7 +88,7 @@ export default function TerminosPage() {
             <Section id="introduccion" title="1. Introducción y aceptación">
               <p>
                 Los presentes Términos y Condiciones regulan el uso del sitio web y los servicios de venta de
-                <strong className="text-white/80"> JD Sport</strong>, tienda de ropa deportiva ubicada en Medellín,
+                <strong className="text-white/80"> Almacen Sport</strong>, tienda de ropa deportiva ubicada en Medellín,
                 Antioquia, Colombia.
               </p>
               <p>
@@ -97,7 +97,7 @@ export default function TerminosPage() {
                 abstenerse de utilizar nuestros servicios.
               </p>
               <p>
-                JD Sport se reserva el derecho de modificar estos términos en cualquier momento. Los cambios entrarán
+                Almacen Sport se reserva el derecho de modificar estos términos en cualquier momento. Los cambios entrarán
                 en vigor inmediatamente después de su publicación. El uso continuado del servicio implica la
                 aceptación de los términos actualizados.
               </p>
@@ -105,7 +105,7 @@ export default function TerminosPage() {
 
             <Section id="servicio" title="2. Descripción del servicio">
               <p>
-                JD Sport es una tienda colombiana especializada en ropa deportiva y casual de alta calidad para dama y
+                Almacen Sport es una tienda colombiana especializada en ropa deportiva y casual de alta calidad para dama y
                 caballero. Ofrecemos nuestros productos a través de:
               </p>
               <ul className="list-none flex flex-col gap-2 pl-4">
@@ -121,7 +121,7 @@ export default function TerminosPage() {
                 ))}
               </ul>
               <p>
-                Los productos mostrados en el catálogo están sujetos a disponibilidad de stock. JD Sport se reserva
+                Los productos mostrados en el catálogo están sujetos a disponibilidad de stock. Almacen Sport se reserva
                 el derecho de actualizar, modificar o descontinuar productos sin previo aviso.
               </p>
             </Section>
@@ -146,24 +146,24 @@ export default function TerminosPage() {
               </ul>
               <p>
                 Los precios publicados incluyen IVA cuando aplique y están expresados en pesos colombianos (COP).
-                JD Sport se reserva el derecho de corregir errores tipográficos en precios antes de confirmar el pedido.
+                Almacen Sport se reserva el derecho de corregir errores tipográficos en precios antes de confirmar el pedido.
               </p>
               <p>
-                El pedido se considerará confirmado una vez JD Sport envíe la notificación de confirmación al correo
+                El pedido se considerará confirmado una vez Almacen Sport envíe la notificación de confirmación al correo
                 electrónico o WhatsApp registrado por el cliente.
               </p>
             </Section>
 
             <Section id="envios" title="4. Política de envíos y entregas">
               <p>
-                JD Sport realiza entregas en Medellín y área metropolitana. Para otras ciudades de Colombia,
+                Almacen Sport realiza entregas en Medellín y área metropolitana. Para otras ciudades de Colombia,
                 el despacho se coordina por WhatsApp y depende de la disponibilidad del servicio de mensajería.
               </p>
               <ul className="list-none flex flex-col gap-2 pl-4">
                 {[
                   'El tiempo estimado de entrega en Medellín es de 1 a 3 días hábiles.',
                   'Los envíos a otras ciudades pueden tomar entre 3 y 8 días hábiles según el destino.',
-                  'JD Sport no se hace responsable por retrasos ocasionados por la empresa transportadora.',
+                  'Almacen Sport no se hace responsable por retrasos ocasionados por la empresa transportadora.',
                   'El cliente debe verificar que la dirección de entrega sea correcta antes de confirmar el pedido.',
                   'Si el paquete no puede ser entregado por dirección incorrecta o ausencia del destinatario, los costos de re-envío serán asumidos por el cliente.',
                 ].map((item) => (
@@ -177,7 +177,7 @@ export default function TerminosPage() {
 
             <Section id="devoluciones" title="5. Devoluciones y garantías">
               <p>
-                JD Sport garantiza la calidad de todos sus productos. Si recibes una prenda con defecto de fabricación
+                Almacen Sport garantiza la calidad de todos sus productos. Si recibes una prenda con defecto de fabricación
                 o diferente a la descrita, acéptamos devoluciones bajo las siguientes condiciones:
               </p>
               <ul className="list-none flex flex-col gap-2 pl-4">
@@ -195,38 +195,38 @@ export default function TerminosPage() {
                 ))}
               </ul>
               <p>
-                Una vez verificada la devolución, JD Sport ofrecerá al cliente la opción de cambio por otra prenda
+                Una vez verificada la devolución, Almacen Sport ofrecerá al cliente la opción de cambio por otra prenda
                 de igual valor o nota crédito para futuras compras.
               </p>
             </Section>
 
             <Section id="propiedad" title="6. Propiedad intelectual">
               <p>
-                Todo el contenido publicado en el sitio web de JD Sport —incluyendo textos, imágenes, logotipos,
-                diseños y código— es propiedad de JD Sport o de sus proveedores de contenido y está protegido por
+                Todo el contenido publicado en el sitio web de Almacen Sport —incluyendo textos, imágenes, logotipos,
+                diseños y código— es propiedad de Almacen Sport o de sus proveedores de contenido y está protegido por
                 las leyes de propiedad intelectual de Colombia.
               </p>
               <p>
                 Queda prohibida la reproducción, distribución, modificación o uso comercial de cualquier contenido
-                del sitio sin autorización expresa y por escrito de JD Sport.
+                del sitio sin autorización expresa y por escrito de Almacen Sport.
               </p>
               <p>
                 Las marcas comerciales de los productos que vendemos pertenecen a sus respectivos fabricantes. La
-                mención de dichas marcas no implica ningún tipo de asociación o patrocinio con JD Sport.
+                mención de dichas marcas no implica ningún tipo de asociación o patrocinio con Almacen Sport.
               </p>
             </Section>
 
             <Section id="responsabilidad" title="7. Limitación de responsabilidad">
               <p>
-                JD Sport no será responsable por daños indirectos, incidentales o consecuentes derivados del uso o
+                Almacen Sport no será responsable por daños indirectos, incidentales o consecuentes derivados del uso o
                 imposibilidad de uso del servicio, incluyendo lucro cesante, pérdida de datos o interrupción del negocio.
               </p>
               <p>
-                La responsabilidad total de JD Sport ante cualquier reclamación no excederá el valor pagado por el
+                La responsabilidad total de Almacen Sport ante cualquier reclamación no excederá el valor pagado por el
                 producto o servicio objeto de la reclamación.
               </p>
               <p>
-                JD Sport no se responsabiliza por situaciones de fuerza mayor, eventos naturales, fallas en servicios
+                Almacen Sport no se responsabiliza por situaciones de fuerza mayor, eventos naturales, fallas en servicios
                 de terceros (transportadoras, pasarelas de pago) o cualquier circunstancia fuera de su control razonable.
               </p>
             </Section>

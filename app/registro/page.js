@@ -130,7 +130,7 @@ export default function RegistroPage() {
         <Link href="/" className="flex items-center gap-2 group" style={{ filter: 'drop-shadow(0 0 6px rgba(50,130,255,0.4))' }}>
           <DiamondTiny />
           <span className="text-white font-black tracking-[0.15em] text-sm uppercase group-hover:text-white/70 transition-colors">
-            JD Sport
+            Almacen Sport
           </span>
         </Link>
       </div>
@@ -316,7 +316,7 @@ export default function RegistroPage() {
                 <Link href="/privacidad" target="_blank" className="text-white/70 hover:text-white underline underline-offset-2 transition-colors">
                   Política de Privacidad
                 </Link>
-                {' '}de JD Sport.
+                {' '}de Almacen Sport.
               </span>
             </label>
 

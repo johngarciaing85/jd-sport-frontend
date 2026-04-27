@@ -1,6 +1,6 @@
 <div align="center">
 
-# 💎 JD Sport — E-commerce Platform
+# 💎 JD Sport — E-commerce Platform Frontend
 
 ### Plataforma full-stack de comercio electrónico en producción
 

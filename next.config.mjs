@@ -29,7 +29,7 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https:",
               "font-src 'self' data:",
-              "connect-src 'self' " + (() => { try { const u = new URL(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'); return u.origin; } catch { return 'http://localhost:8000'; } })(),
+              "connect-src 'self' https://sandbox.wompi.co https://production.wompi.co " + (() => { try { const u = new URL(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'); return u.origin; } catch { return 'http://localhost:8000'; } })(),
               "frame-ancestors 'none'",
               "base-uri 'self'",
               "form-action 'self'",

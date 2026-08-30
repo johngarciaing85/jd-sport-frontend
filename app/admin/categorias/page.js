@@ -1,5 +1,5 @@
 'use client';
-import { API_URL } from '@/lib/api';
+import { API_URL, safeErrorMessage } from '@/lib/api';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -79,11 +79,7 @@ function CategoriaModal({ categoria, token, onClose, onSuccess }) {
       onSuccess(result, isEdit);
       onClose();
     } catch (err) {
-      const detail = err.response?.data?.detail;
-      const errorMsg = Array.isArray(detail)
-        ? detail.map(e => e.msg).join(', ')
-        : (typeof detail === 'string' ? detail : (err.response?.data?.message || (isEdit ? 'Error al actualizar.' : 'Error al crear.')));
-      setError(errorMsg);
+      setError(safeErrorMessage(err, isEdit ? 'Error al actualizar.' : 'Error al crear.'));
     } finally {
       setSaving(false);
     }
@@ -200,9 +196,7 @@ function EliminarModal({ categoria, token, onClose, onSuccess }) {
       onSuccess(categoria.id);
       onClose();
     } catch (err) {
-      const detail = err.response?.data?.detail;
-      const errorMsg = Array.isArray(detail) ? detail.map(e => e.msg).join(', ') : (typeof detail === 'string' ? detail : (err.response?.data?.message || 'Error al eliminar.'));
-      setError(errorMsg);
+      setError(safeErrorMessage(err, 'Error al eliminar.'));
     } finally {
       setDeleting(false);
     }

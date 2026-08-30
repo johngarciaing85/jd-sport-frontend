@@ -1,5 +1,5 @@
 'use client';
-import { API_URL } from '@/lib/api';
+import { API_URL, safeErrorMessage } from '@/lib/api';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -100,11 +100,7 @@ export default function NuevoProducto() {
 
       router.push('/admin/productos');
     } catch (err) {
-      const detail = err.response?.data?.detail;
-      const errorMsg = Array.isArray(detail)
-        ? detail.map(e => e.msg).join(', ')
-        : (typeof detail === 'string' ? detail : (err.response?.data?.message || 'Error al crear el producto. Verifica los datos.'));
-      setError(errorMsg);
+      setError(safeErrorMessage(err, 'Error al crear el producto. Verifica los datos.'));
       setSaving(false);
     }
   };

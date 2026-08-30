@@ -1,5 +1,5 @@
 'use client';
-import { API_URL } from '@/lib/api';
+import { API_URL, safeErrorMessage } from '@/lib/api';
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -236,9 +236,7 @@ function Resenas({ productoId }) {
       setEstrellas(5);
       cargar();
     } catch (err) {
-      const detail = err.response?.data?.detail;
-      const errorMsg = Array.isArray(detail) ? detail.map(e => e.msg).join(', ') : (typeof detail === 'string' ? detail : 'No se pudo enviar la reseña.');
-      setError(errorMsg);
+      setError(safeErrorMessage(err, 'No se pudo enviar la reseña.'));
     } finally {
       setSubmitting(false);
     }

@@ -1,5 +1,5 @@
 'use client';
-import { API_URL } from '@/lib/api';
+import { API_URL, safeErrorMessage } from '@/lib/api';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -163,9 +163,7 @@ export default function AdminClientes() {
       const nombre = cliente.nombre ?? cliente.first_name ?? cliente.email ?? `#${cliente.id}`;
       showFeedback('ok', `${nombre} ${esActivo ? 'desactivado' : 'activado'} correctamente.`);
     } catch (err) {
-      const detail = err.response?.data?.detail;
-      const errorMsg = Array.isArray(detail) ? detail.map(e => e.msg).join(', ') : (typeof detail === 'string' ? detail : 'Error al cambiar el estado del cliente.');
-      showFeedback('err', errorMsg);
+      showFeedback('err', safeErrorMessage(err, 'Error al cambiar el estado del cliente.'));
     } finally {
       setTogglingId(null);
     }

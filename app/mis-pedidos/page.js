@@ -1,5 +1,5 @@
 'use client';
-import { API_URL } from '@/lib/api';
+import { API_URL, safeErrorMessage } from '@/lib/api';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -90,11 +90,7 @@ function PedidoCard({ pedido, token, onPagoConfirmado }) {
       setShowConfirm(false);
       if (onPagoConfirmado) onPagoConfirmado(pedido.id);
     } catch (err) {
-      const detail = err.response?.data?.detail;
-      setConfirmError(
-        Array.isArray(detail) ? detail.map(e => e.msg).join(', ')
-        : (typeof detail === 'string' ? detail : 'Error al confirmar el pago. Intenta de nuevo.')
-      );
+      setConfirmError(safeErrorMessage(err, 'Error al confirmar el pago. Intenta de nuevo.'));
     } finally {
       setConfirmando(false);
     }

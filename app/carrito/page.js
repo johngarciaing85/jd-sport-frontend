@@ -1,9 +1,10 @@
 'use client';
-import { API_URL } from '@/lib/api';
+import { API_URL, api, safeErrorMessage, isAllowedRedirect } from '@/lib/api';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import axios from 'axios';
+
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useCarrito, selectTotal, selectCantidadTotal } from '@/lib/carrito';
@@ -435,7 +436,6 @@ function MetodoPagoModal({ items, subtotal, token, isGuest, ciudad, onCiudadChan
           celular:     addr.celular.trim(),
           metodo_pago: 'tienda',
         };
-        console.log('[SEPARAR] guest payload:', guestPayload);
         const res = await axios.post(`${API_URL}/pedidos/invitado`, guestPayload);
         const pedidoId = res.data?.id ? ` #${res.data.id}` : '';
         setSuccess(`¡Reserva confirmada! Tu pedido${pedidoId} está separado por 48 horas. Revisa tu correo para los detalles.`);
@@ -444,7 +444,6 @@ function MetodoPagoModal({ items, subtotal, token, isGuest, ciudad, onCiudadChan
           items:   pedidoItems,
           celular: addr.celular.trim(),
         };
-        console.log('[SEPARAR] auth payload:', authPayload);
         const res = await axios.post(
           `${API_URL}/pedidos/separar`,
           authPayload,
@@ -455,9 +454,7 @@ function MetodoPagoModal({ items, subtotal, token, isGuest, ciudad, onCiudadChan
       }
       onSuccess();
     } catch (err) {
-      const detail = err.response?.data?.detail;
-      const errorMsg = Array.isArray(detail) ? detail.map(e => e.msg).join(', ') : (typeof detail === 'string' ? detail : (err.response?.data?.message || 'Error al separar el pedido.'));
-      setError(errorMsg);
+      setError(safeErrorMessage(err, 'Error al separar el pedido.'));
     } finally {
       setLoading(false);
     }
@@ -481,7 +478,7 @@ function MetodoPagoModal({ items, subtotal, token, isGuest, ciudad, onCiudadChan
           metodo_pago:     'wompi',
         });
         const wompiUrl = res.data?.wompi_url;
-        if (!wompiUrl) {
+        if (!wompiUrl || !isAllowedRedirect(wompiUrl)) {
           setError('No se pudo generar el link de pago. Intenta de nuevo.');
           setLoading(false);
           return;
@@ -508,7 +505,7 @@ function MetodoPagoModal({ items, subtotal, token, isGuest, ciudad, onCiudadChan
           { headers: { Authorization: `Bearer ${token}` } }
         );
         const wompiUrl = pagoRes.data?.link_pago ?? pagoRes.data?.url ?? pagoRes.data?.wompi_url ?? pagoRes.data?.redirect_url ?? pagoRes.data?.link;
-        if (!wompiUrl) {
+        if (!wompiUrl || !isAllowedRedirect(wompiUrl)) {
           setError('No se pudo generar el link de pago.');
           setLoading(false);
           return;
@@ -517,9 +514,7 @@ function MetodoPagoModal({ items, subtotal, token, isGuest, ciudad, onCiudadChan
         window.location.href = wompiUrl;
       }
     } catch (err) {
-      const detail = err.response?.data?.detail;
-      const errorMsg = Array.isArray(detail) ? detail.map(e => e.msg).join(', ') : (typeof detail === 'string' ? detail : (err.response?.data?.message || 'Error al procesar el pago.'));
-      setError(errorMsg);
+      setError(safeErrorMessage(err, 'Error al procesar el pago.'));
     } finally {
       setLoading(false);
     }

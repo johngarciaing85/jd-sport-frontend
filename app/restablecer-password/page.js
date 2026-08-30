@@ -1,9 +1,8 @@
 'use client';
-import { API_URL } from '@/lib/api';
+import { api, safeErrorMessage, validatePassword } from '@/lib/api';
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import axios from 'axios';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
@@ -33,8 +32,9 @@ function RestablecerContent() {
       setError('Por favor completa todos los campos.');
       return;
     }
-    if (form.nueva_password.length < 8) {
-      setError('La contraseña debe tener al menos 8 caracteres.');
+    const pwError = validatePassword(form.nueva_password);
+    if (pwError) {
+      setError(pwError);
       return;
     }
     if (form.nueva_password !== form.confirmar_password) {
@@ -44,17 +44,13 @@ function RestablecerContent() {
     setLoading(true);
     setError(null);
     try {
-      await axios.post(`${API_URL}/auth/reset-password`, {
+      await api.post('/auth/reset-password', {
         token,
         nueva_password: form.nueva_password,
       });
       setSuccess(true);
     } catch (err) {
-      const detail = err.response?.data?.detail;
-      const errorMsg = Array.isArray(detail)
-        ? detail.map(e => e.msg).join(', ')
-        : (typeof detail === 'string' ? detail : (err.response?.data?.message || 'El enlace es inválido o ha expirado. Solicita uno nuevo.'));
-      setError(errorMsg);
+      setError(safeErrorMessage(err, 'El enlace es inválido o ha expirado. Solicita uno nuevo.'));
     } finally {
       setLoading(false);
     }

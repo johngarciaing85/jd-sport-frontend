@@ -1,5 +1,5 @@
 'use client';
-import { API_URL } from '@/lib/api';
+import { API_URL, safeErrorMessage } from '@/lib/api';
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
@@ -132,12 +132,9 @@ export default function EditarProducto() {
       if (fields.categoria_id) payload.categoria_id = Number(fields.categoria_id);
       if (fields.precio_oferta) payload.precio_oferta = Number(fields.precio_oferta) || 0;
 
-      console.log('[Editar] payload →', payload);
-
       const res = await axios.put(`${API_URL}/productos/${id}`, payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      console.log('[Editar] PUT response →', res.status, res.data);
 
       // Always sync tallas stock (empty array clears nothing, upserts when provided)
       if (tallasStock.length > 0) {
@@ -159,15 +156,7 @@ export default function EditarProducto() {
       // Hard redirect garantiza datos frescos sin depender del caché del router
       window.location.href = '/admin/productos';
     } catch (err) {
-      console.error('[Editar] error →', err.response?.status, err.response?.data);
-      const data = err.response?.data;
-      const msg =
-        (typeof data === 'string' ? data : null) ||
-        data?.detail ||
-        data?.message ||
-        (Array.isArray(data) ? data.map((e) => e.msg ?? e).join(', ') : null) ||
-        `Error ${err.response?.status ?? ''}: no se pudo guardar.`;
-      setSaveError(msg);
+      setSaveError(safeErrorMessage(err, 'No se pudo guardar el producto.'));
       setSaving(false);
     }
   };

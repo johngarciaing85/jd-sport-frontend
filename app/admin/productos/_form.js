@@ -1,5 +1,5 @@
 'use client';
-import { API_URL } from '@/lib/api';
+import { API_URL, validateImageFile } from '@/lib/api';
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 
@@ -170,6 +170,10 @@ function GaleriaImagenes({ productoId, initialImagenes = [], token }) {
   const handleAdd = async (e) => {
     const files = Array.from(e.target.files ?? []);
     if (!files.length) return;
+    for (const f of files) {
+      const err = validateImageFile(f);
+      if (err) { alert(`${f.name}: ${err}`); return; }
+    }
     setUploading(true);
     try {
       const form = new FormData();
@@ -183,8 +187,7 @@ function GaleriaImagenes({ productoId, initialImagenes = [], token }) {
         ? res.data
         : (res.data?.imagenes ?? []);
       setImagenes((prev) => [...prev, ...nuevas]);
-    } catch (err) {
-      console.error('[Galería] upload error', err.response?.status, err.response?.data);
+    } catch {
     } finally {
       setUploading(false);
       if (inputRef.current) inputRef.current.value = '';
@@ -198,8 +201,7 @@ function GaleriaImagenes({ productoId, initialImagenes = [], token }) {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setImagenes((prev) => prev.filter((i) => i.id !== img.id));
-    } catch (err) {
-      console.error('[Galería] delete error', err.response?.status, err.response?.data);
+    } catch {
     }
   };
 
@@ -326,6 +328,11 @@ export default function ProductoForm({
   const handleFile = (e) => {
     const f = e.target.files?.[0];
     if (!f) return;
+    const validationError = validateImageFile(f);
+    if (validationError) {
+      alert(validationError);
+      return;
+    }
     setImageFile(f);
     if (imagePreview?.startsWith('blob:')) URL.revokeObjectURL(imagePreview);
     setImagePreview(URL.createObjectURL(f));

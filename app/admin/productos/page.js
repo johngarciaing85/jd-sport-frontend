@@ -1,6 +1,6 @@
 'use client';
 // Ruta: app/admin/productos/page.js
-import { API_URL } from '@/lib/api';
+import { API_URL, safeErrorMessage, validateImageFile } from '@/lib/api';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -45,6 +45,11 @@ function UploadModal({ producto, token, onClose, onSuccess }) {
   const handleFile = (e) => {
     const f = e.target.files?.[0];
     if (!f) return;
+    const validationError = validateImageFile(f);
+    if (validationError) {
+      setStatus({ type: 'err', msg: validationError });
+      return;
+    }
     setFile(f);
     setStatus(null);
     if (preview) URL.revokeObjectURL(preview);
@@ -76,11 +81,7 @@ function UploadModal({ producto, token, onClose, onSuccess }) {
       setStatus({ type: 'ok', msg: 'Imagen actualizada correctamente.' });
       onSuccess(producto.id, url);
     } catch (err) {
-      const detail = err.response?.data?.detail;
-      const errorMsg = Array.isArray(detail)
-        ? detail.map(e => e.msg).join(', ')
-        : (typeof detail === 'string' ? detail : (err.response?.data?.message || 'Error al subir la imagen. Intenta de nuevo.'));
-      setStatus({ type: 'err', msg: errorMsg });
+      setStatus({ type: 'err', msg: safeErrorMessage(err, 'Error al subir la imagen. Intenta de nuevo.') });
     } finally {
       setUploading(false);
     }
@@ -449,12 +450,10 @@ export default function AdminProductos() {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
-        console.log('[Productos] response:', res.data);
         const list = res.data?.items ?? res.data?.results ?? (Array.isArray(res.data) ? res.data : []);
         setProductos(list);
       })
       .catch((err) => {
-        console.log('[Productos] error:', err.response?.status, err.message);
         if (err.response?.status === 401 || err.response?.status === 403) {
           router.replace('/login');
         } else {
@@ -488,8 +487,7 @@ export default function AdminProductos() {
       });
       setProductos((prev) => prev.filter((p) => p.id !== deleteTarget.id));
       setDeleteTarget(null);
-    } catch (err) {
-      console.error('[Delete] error →', err.response?.status, err.response?.data);
+    } catch {
     } finally {
       setDeleting(false);
     }

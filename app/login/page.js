@@ -1,8 +1,9 @@
 'use client';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
+import { safeErrorMessage } from '@/lib/api';
 
 function DiamondTiny() {
   return (
@@ -36,6 +37,8 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showPass, setShowPass] = useState(false);
+  const failCountRef = useRef(0);
+  const lockUntilRef = useRef(0);
 
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -48,17 +51,26 @@ export default function LoginPage() {
       setError('Por favor completa todos los campos.');
       return;
     }
+    const now = Date.now();
+    if (now < lockUntilRef.current) {
+      const secs = Math.ceil((lockUntilRef.current - now) / 1000);
+      setError(`Demasiados intentos. Espera ${secs} segundos.`);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
       await login(form.email, form.password);
+      failCountRef.current = 0;
       router.push('/');
     } catch (err) {
-      const detail = err.response?.data?.detail;
-      const errorMsg = Array.isArray(detail)
-        ? detail.map(e => e.msg).join(', ')
-        : (typeof detail === 'string' ? detail : (err.response?.data?.message || 'Credenciales incorrectas. Intenta de nuevo.'));
-      setError(errorMsg);
+      failCountRef.current += 1;
+      if (failCountRef.current >= 5) {
+        lockUntilRef.current = Date.now() + 30000;
+      } else if (failCountRef.current >= 3) {
+        lockUntilRef.current = Date.now() + 10000;
+      }
+      setError(safeErrorMessage(err, 'Credenciales incorrectas. Intenta de nuevo.'));
     } finally {
       setLoading(false);
     }

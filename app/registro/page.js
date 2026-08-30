@@ -1,8 +1,7 @@
 'use client';
-import { API_URL } from '@/lib/api';
+import { api, safeErrorMessage, validatePassword } from '@/lib/api';
 import { useState } from 'react';
 import Link from 'next/link';
-import axios from 'axios';
 
 function DiamondTiny() {
   return (
@@ -67,8 +66,9 @@ export default function RegistroPage() {
       setError('Las contraseñas no coinciden.');
       return;
     }
-    if (form.password.length < 8) {
-      setError('La contraseña debe tener al menos 8 caracteres.');
+    const pwError = validatePassword(form.password);
+    if (pwError) {
+      setError(pwError);
       return;
     }
 
@@ -85,14 +85,10 @@ export default function RegistroPage() {
     };
 
     try {
-      await axios.post(`${API_URL}/usuarios/registro`, payload);
+      await api.post('/usuarios/registro', payload);
       setSuccess(true);
     } catch (err) {
-      const detail = err.response?.data?.detail;
-      const errorMsg = Array.isArray(detail)
-        ? detail.map(e => e.msg).join(', ')
-        : (typeof detail === 'string' ? detail : (err.response?.data?.email?.[0] || err.response?.data?.message || 'No se pudo crear la cuenta. Intenta de nuevo.'));
-      setError(errorMsg);
+      setError(safeErrorMessage(err, 'No se pudo crear la cuenta. Intenta de nuevo.'));
     } finally {
       setLoading(false);
     }
